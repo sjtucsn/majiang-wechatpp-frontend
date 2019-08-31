@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>麻将玩家测试</title>
+</head>
+
+<body>
+  当前游客Id：<input id="account" value="test" />
+      <input id="text" type="text" value="4" />
+      <button onclick="handleIn()">摸牌</button>
+      <button onclick="openWebSocket()">准备</button>
+      <button onclick="handleChi()">吃</button>
+      <button onclick="handlePeng()">碰</button>
+      <button onclick="handleGang()">杠</button>
+      <button onclick="handleOut()">出牌</button>
+      <button onclick="handlePass()">过</button>
+      <div id="message" style="width: 100%"></div>
+</body>
+
+<script type="text/javascript">
+  let websocket = {}
+  let data = {}
+  let user = {}
+  const id = Math.round(Math.random() * 100)
+  document.getElementById('account').value = `玩家${id}`
+  openWebSocket()
+
+  function openWebSocket() {
+    websocket = new WebSocket(`ws://192.168.43.74:8080/game/${document.getElementById('account').value}`);
+
+    //连接发生错误的回调方法
+    websocket.onerror = function () {
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：WebSocket连接发生错误"</div>`);
+    };
+
+    //连接成功建立的回调方法
+    websocket.onopen = function () {
+      websocket.send(JSON.stringify({ type: 0, message: '准备好了' }))
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：连接成功</div>`);
+    }
+
+    //接收到消息的回调方法
+    websocket.onmessage = function (event) {
+      data = JSON.parse(event.data)
+      // console.log(data)
+      if (data.messageType === 0) {
+        return
+      }
+      user = data.userList.filter(user => user.userNickName === document.getElementById('account').value)[0]
+      document.getElementById('message').innerHTML = ''
+      setMessageInnerHTML(`<div style="text-align: right">当前出牌${data.currentOutMajiang ? data.currentOutMajiang.name : ''}</div>`)
+      for (let mj of user.userMajiangList) {
+        setMessageInnerHTML(`<div style="float: left">${mj.name}&nbsp;&nbsp;`);
+      }
+
+      const currentUserName = data.currentUserName
+      const currentOutMajiang = data.currentOutMajiang
+      const currentInMajiang = data.currentInMajiang
+
+      // 轮到自己时
+      if (currentUserName === document.getElementById('account').value) {
+        // 开始阶段补花
+        if (!currentOutMajiang) {
+          if (user.userMajiangList.filter(mj => mj.code > 30).length > 0) {
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 2, message: '开始阶段补花' }))
+            }, 100)
+            return
+          } else {
+            // 没有花，也补花（会直接跳过）
+            // websocket.send(JSON.stringify({ type: 2, message: '已经没花啦补花' }))
+          }
+        }
+        if (data.currentUserName != data.physicalNextUserName) {
+          // 遇到吃碰等情况直接跳过
+          websocket.send(JSON.stringify({ type: 12, message: '过' }))
+          return
+        }
+        // 正常打牌
+        console.log(currentInMajiang)
+        if (currentOutMajiang && currentInMajiang) {
+          if (currentInMajiang.code > 30) {
+            // 摸到的是花
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 5, message: '补花' }))
+            }, 100)
+          } else {
+            // 摸到的不是花，打掉第16张牌
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 3, message: Math.floor(Math.random() * 16) }))
+            }, 100)
+          }
+          return
+        } else {
+          // 抓牌
+          websocket.send(JSON.stringify({ type: 4, message: '抓牌' }))
+          return
+        }
+      }
+    }
+
+    //连接关闭的回调方法
+    websocket.onclose = function () {
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：WebSocket连接关闭</div>`);
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function () {
+      closeWebSocket();
+    }
+  }
+
+  //将消息显示在网页上
+  function setMessageInnerHTML(innerHTML) {
+    document.getElementById('message').innerHTML += innerHTML;
+  }
+
+  //关闭WebSocket连接
+  function closeWebSocket() {
+    // websocket关闭之前发送下线信息
+    const body = { event: 'offline', data: { id: id } }
+    // websocket.send(JSON.stringify(body));
+    // websocket.close();
+  }
+
+  //发送消息
+  function send() {
+    if (document.getElementById('text').value === '') {
+      alert('发送消息不能为空！')
+      return
+    }
+    const data = { message: 0, type: document.getElementById('text').value }
+    document.getElementById('text').value = 4;
+    const body = { event: 'message', data: data }
+    websocket.send(JSON.stringify(data));
+  }
+
+  function handleIn() {
+    websocket.send(JSON.stringify({ type: 4, message: '摸牌' }))
+  }
+
+  function handleOut() {
+    websocket.send(JSON.stringify({ type: 3, message: document.getElementById('text').value }))
+  }
+
+  function handlePass() {
+    websocket.send(JSON.stringify({ type: 12, message: '过' }))
+  }
+
+  function handleChi() {
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList
+    const canEatMjCodeArray = mjBottomArray.map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
+    let mjId1, mjId2
+    if (canEatMjCodeArray.includes(currentOutMjCode - 2) && canEatMjCodeArray.includes(currentOutMjCode - 1)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 2)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
+    } else if (canEatMjCodeArray.includes(currentOutMjCode - 1) && canEatMjCodeArray.includes(currentOutMjCode + 1)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
+    } else if (canEatMjCodeArray.includes(currentOutMjCode + 1) && canEatMjCodeArray.includes(currentOutMjCode + 2)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 2)[0].id
+    }
+    if (mjId1 && mjId2) {
+      websocket.send(JSON.stringify({ type: 6, message: `${mjId1} ${mjId2}` }))
+    }
+  }
+
+  function handlePeng() {
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList
+    if (mjBottomArray.filter(mj => mj.code === currentOutMjCode).length >= 2) {
+      websocket.send(JSON.stringify({ type: 7, message: '碰' }))
+    }
+  }
+
+  function handleGang() {
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList
+    if (mjBottomArray.filter(mj => mj.code === currentOutMjCode).length === 3) {
+      websocket.send(JSON.stringify({ type: 8, message: '杠' }))
+    }
+  }
+</script>
+
+</html>

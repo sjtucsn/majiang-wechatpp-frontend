@@ -12,7 +12,12 @@ Page({
   //事件处理函数
   bindViewTap: function() {
     wx.navigateTo({
-      url: '../logs/logs'
+      url: '../room/room'
+    })
+  },
+  bindStartGame: function () {
+    wx.navigateTo({
+      url: '../room/room'
     })
   },
   onLoad: function () {
@@ -44,7 +49,6 @@ Page({
     }
   },
   getUserInfo: function(e) {
-    console.log(e)
     app.globalData.userInfo = e.detail.userInfo
     this.setData({
       userInfo: e.detail.userInfo,

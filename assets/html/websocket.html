@@ -10,13 +10,14 @@
   当前游客Id：<input id="account" value="test" />
       <input id="text" type="text" value="4" />
       <button onclick="handleIn()">摸牌</button>
-      <button onclick="openWebSocket()">准备</button>
+      <button onclick="connect()">准备</button>
       <button onclick="handleChi()">吃</button>
       <button onclick="handlePeng()">碰</button>
       <button onclick="handleGang()">杠</button>
       <button onclick="handleOut()">出牌</button>
       <button onclick="handlePass()">过</button>
-      <div id="message" style="width: 100%"></div>
+	    <button onclick="closeWebSocket()">退出</button>
+      <div id="message" style="width: 100%"></div>
 </body>
 
 <script type="text/javascript">
@@ -27,8 +28,12 @@
   document.getElementById('account').value = `玩家${id}`
   openWebSocket()
 
+  function connect() {
+    websocket.send(JSON.stringify({ type: 0, message: '准备好了' }))
+  }
+
   function openWebSocket() {
-    websocket = new WebSocket(`ws://192.168.43.74:8080/game/${document.getElementById('account').value}`);
+    websocket = new WebSocket(`wss://mj.sjtudoit.com/game/${document.getElementById('account').value}`);
 
     //连接发生错误的回调方法
     websocket.onerror = function () {
@@ -37,7 +42,6 @@
 
     //连接成功建立的回调方法
     websocket.onopen = function () {
-      websocket.send(JSON.stringify({ type: 0, message: '准备好了' }))
       setMessageInnerHTML(`<div style="text-align: center">系统消息：连接成功</div>`);
     }
 
@@ -45,7 +49,7 @@
     websocket.onmessage = function (event) {
       data = JSON.parse(event.data)
       // console.log(data)
-      if (data.messageType === 0) {
+      if (data.messageType === 0 || data.messageType >= 13) {
         return
       }
       user = data.userList.filter(user => user.userNickName === document.getElementById('account').value)[0]
@@ -87,7 +91,7 @@
               websocket.send(JSON.stringify({ type: 5, message: '补花' }))
             }, 100)
           } else {
-            // 摸到的不是花，打掉第16张牌
+            // 摸到的不是花，随机打掉一张牌
             setTimeout(() => {
               websocket.send(JSON.stringify({ type: 3, message: Math.floor(Math.random() * 16) }))
             }, 100)
@@ -120,9 +124,9 @@
   //关闭WebSocket连接
   function closeWebSocket() {
     // websocket关闭之前发送下线信息
-    const body = { event: 'offline', data: { id: id } }
+    // const body = { event: 'offline', data: { id: id } }
     // websocket.send(JSON.stringify(body));
-    // websocket.close();
+    websocket.close();
   }
 
   //发送消息

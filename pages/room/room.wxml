@@ -1,94 +1,132 @@
 <!--pages/room.wxml-->
 <view class="room">
-  <button style="position: absolute; padding: 2px; font-size: 25px; line-height: 25px; left: 2vw" size="mini" bindtap="handleReady">准备</button>
-  <button style="position: absolute; padding: 2px; font-size: 25px; line-height: 25px; left: 10vw" size="mini" bindtap="handleStartGame">开始</button>
+  <button style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 4vw; top: 1vh" size="mini" bindtap="handleQuitGame">退出</button>
 
   <text style="position: absolute; right: 2vw; font-size: 14px; color: white; line-height: 30px; z-index: 10">剩余麻将数：{{remainMajiangNum}}</text>
 
-  <view style="position: absolute; bottom: 25vh; left: 58vw;">
-    <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleAdd">摸</button>
+  <view wx:if="{{gameStarted}}" style="position: absolute; bottom: 25vh; left: 57vw;">
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleChi">吃</button>
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handlePeng">碰</button>
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleGang">杠</button>
-    <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleHu">胡</button>
-    <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handlePass">过</button>
+    <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px; margin-right: 10px" size="mini" bindtap="handleHu">胡</button>
+    <button wx:if="{{currentUserName === bottomUser.userNickName && currentUserName === physicalNextUserName && messageType > 2}}" style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleAdd">摸</button>
+    <button wx:if="{{currentUserName === bottomUser.userNickName && currentUserName !== physicalNextUserName && (messageType === 3 || messageType === 12) }}" style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handlePass">过</button>
   </view>
-  <image class='background' src="../../assets/img/background.png" mode="aspectFill"></image>
+  <image class='background' src="/assets/img/background.png" mode="aspectFill" style="z-index: -10"></image>
+
+  <view wx:if="{{showScoreboard}}" style="position: absolute; z-index: 100; width: 62vw; left: 19vw; top: 12vh; background: white; border-radius: 10px; font-size: 16px; padding: 10px 1vw">
+    <view style="text-align: center; font-size: 24px; line-height: 30px">{{scoreboard.result}}</view>
+    <view style="text-align: center; padding: 3px 0">
+      <text style="width: 20vw; display: inline-block">用户昵称</text>
+      <text style="width: 15vw; display: inline-block">上局分数</text>
+      <text style="width: 15vw; display: inline-block">本局得分</text>
+      <text style="width: 10vw; display: inline-block">总分</text>
+    </view>
+    <view wx:for="{{scoreboard.detail}}" wx:key="{{userNickName}}" style="padding: 0; text-align: center">
+      <text style="width: 20vw; display: inline-block; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{{item.userNickName}}</text>
+      <text style="width: 15vw; display: inline-block">{{item.previousScore}}</text>
+      <text style="width: 15vw; display: inline-block">{{item.scoreChange}}</text>
+      <text style="width: 10vw; display: inline-block">{{item.score}}</text>
+    </view>
+    <view style="padding: 5px 0">
+      <button style="width: 10vw; padding: 2px 5px; font-size: 25px; line-height: 25px;" bindtap="hideScoreBoard">确定</button>
+    </view>
+  </view>
 
   <view style="display: flex; justify-content: center;">
-    <view style="margin-top: 25vh; color: white; font-size: 16px;">
-      <view wx:if="{{topUserScore !== ''}}" class="{{currentUserName === topUserName ? 'name-select': ''}}" style="text-align: center; color:"><text>{{topUserName}}({{topUserScore}}){{topUserName === bankerName ? '庄' : ''}}</text></view>
-      <view wx:if="{{leftUserScore !== ''}}" class="{{currentUserName === leftUserName ? 'name-select': ''}}" style="line-height: 104px; vertical-align: top; display: inline-block; position: relative;">{{leftUserName}}({{leftUserScore}}){{leftUserName === bankerName ? '庄' : ''}}</view>
-      <image src="../../assets/img/desktop.png" style="width: 104px; height: 104px; position: relative; left: 14px;"></image>
-      <image src="../../assets/img/{{jin.code}}.png" style="width: 28px; height: 40px; position: relative; left: -55px; top: -29px; background: white; border: solid 3px orange"></image>
-      <view wx:if="{{rightUserScore !== ''}}" class="{{currentUserName === rightUserName ? 'name-select': ''}}" style="line-height: 104px; vertical-align: top; display: inline-block; position: relative;">{{rightUserName}}({{rightUserScore}}){{rightUserName === bankerName ? '庄' : ''}}</view>
-      <view wx:if="{{bottomUserScore !== ''}}" class="{{currentUserName === bottomUserName ? 'name-select': ''}}" style="text-align: center;"><text>{{bottomUserName}}({{bottomUserScore}}){{bottomUserName === bankerName ? '庄' : ''}}</text></view>
+    <view style="margin-top: 22vh; color: white; font-size: 16px;">
+      <view wx:if="{{topUser.score}}" class="top-user {{currentUserName === topUser.userNickName ? 'name-select': ''}}">
+        {{topUser.userNickName}}{{topUser.userNickName ? '(' + topUser.score + ')' : ''}}{{topUser.banker ? '庄' : ''}}{{topUser.ready ? '(准备)' : ''}}
+      </view>
+
+      <view wx:if="{{leftUser.score}}" class="left-user {{currentUserName === leftUser.userNickName ? 'name-select': ''}}">
+        {{leftUser.userNickName}}{{leftUser.userNickName ? '(' + leftUser.score + ')' : ''}}{{leftUser.banker ? '庄' : ''}}{{leftUser.ready ? '(准备)' : ''}}
+      </view>
+
+      <image src="/assets/img/desktop.png" style="width: 104px; height: 104px; position: relative; left: 14px;"></image>
+      <image src="/assets/img/{{jin.code}}.png" style="width: 28px; height: 40px; position: relative; left: -55px; top: -29px; background: white; border: solid 3px orange"></image>
+
+      <view wx:if="{{rightUser.score}}" class="right-user {{currentUserName === rightUser.userNickName ? 'name-select': ''}}">
+        {{rightUser.userNickName}}{{rightUser.userNickName ? '(' + rightUser.score + ')' : ''}}{{rightUser.banker ? '庄' : ''}}{{rightUser.ready ? '(准备)' : ''}}
+      </view>
+
+      <view wx:if="{{bottomUser.score}}" class="bottom-user {{currentUserName === bottomUser.userNickName ? 'name-select': ''}}">
+        {{bottomUser.userNickName}}{{bottomUser.userNickName ? '(' + bottomUser.score + ')' : ''}}{{bottomUser.banker ? '庄' : ''}}{{bottomUser.ready ? '(准备)' : ''}}
+      </view>
+
+      <view wx:if="{{!connected}}" style="text-align: center">
+        <button style="padding: 2px 5px; font-size: 25px; line-height: 25px; margin-top: 5px; z-index: 5" size="mini" bindtap="handleReady">准备</button>
+      </view>
     </view>
   </view>
 
 
   <view class="top">
     <view wx:for="{{mjTopArray}}" wx:key="id" style="float: left; width: 25px; position: relative">
-      <image wx:if="{{item.anGang}}" src="../../assets/img/mj_04.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="../../assets/img/mj_03.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/mj_01.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 20px; height: 28px; position: absolute; left: 2px; top: 5px; transform: rotate(180deg)"></image>
+      <image wx:if="{{item.anGang}}" src="/assets/img/mj_04.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
+      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_03.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/mj_01.png" mode="aspectFill" style="width: 25px; height: 45px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 20px; height: 28px; position: absolute; left: 2px; top: 5px; transform: rotate(180deg)"></image>
     </view>
   </view>
 
   <view class="left">
     <view wx:for="{{mjLeftArray}}" wx:key="id" style="width: 30px; height: 16px;  position: relative">
-      <image wx:if="{{item.anGang}}" src="../../assets/img/mj_18.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="../../assets/img/mj_15.png" mode="aspectFill" style="width: 20px; height: 40px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 20px; position: absolute; left: 8px; top: -2px; transform: rotate(90deg);"></image>
+      <image wx:if="{{item.anGang}}" src="/assets/img/mj_18.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_15.png" mode="aspectFill" style="width: 20px; height: 40px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 20px; position: absolute; left: 8px; top: -2px; transform: rotate(90deg);"></image>
     </view>
   </view>
 
   <view class="right">
     <view wx:for="{{mjRightArray}}" wx:key="id" style="width: 30px; height: 16px; position: relative">
-      <image wx:if="{{item.anGang}}" src="../../assets/img/mj_18.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="../../assets/img/mj_20.png" mode="aspectFill" style="width: 20px; height: 40px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 20px; position: absolute; left: 8px; top: -2px; transform: rotate(270deg);"></image>
+      <image wx:if="{{item.anGang}}" src="/assets/img/mj_18.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_20.png" mode="aspectFill" style="width: 20px; height: 40px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 20px; position: absolute; left: 8px; top: -2px; transform: rotate(270deg);"></image>
     </view>
   </view>
 
   <view class="bottom">
     <view wx:for="{{mjBottomArray}}" wx:key="id" style="float: left; width: 34px; position: relative; top: {{item.top}}" bindtap="handleChoose" data-index="{{index}}">
-      <image wx:if="{{item.anGang}}" src="../../assets/img/mj_04.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="../../assets/img/mj_02.png" mode="aspectFill" style="width: 36px; height: 66px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 19px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/mj_01.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
-      <image wx:if="{{item.show}}" src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 8px"></image>
+      <image wx:if="{{item.anGang}}" src="/assets/img/mj_04.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
+      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_02.png" mode="aspectFill" style="width: 36px; height: 66px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
+      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 19px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/mj_01.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
+      <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 8px"></image>
     </view>
   </view>
 
   <view class="center-top">
     <view wx:for="{{mjTopOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative;">
-      <image src="../../assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
-      <image src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px; transform: rotate(180deg);"></image>
+      <image src="/assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
+      <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px; transform: rotate(180deg);"></image>
+      <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 3px; top: -3px;"></image>
     </view>
   </view>
 
   <view class="center-left">
     <view wx:for="{{mjLeftOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative;">
-      <image src="../../assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(90deg);"></image>
+      <image src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(90deg);"></image>
+      <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 6px; top: -10px;"></image>
     </view>
   </view>
 
   <view class="center-right">
     <view wx:for="{{mjRightOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative;">
-      <image src="../../assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
-      <image src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(270deg);"></image>
+      <image src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
+      <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(270deg);"></image>
+      <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 6px; top: -10px;"></image>
     </view>
   </view>
 
   <view class="center-bottom">
     <view wx:for="{{mjBottomOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative;">
-      <image src="../../assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
-      <image src="../../assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px"></image>
+      <image src="/assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
+      <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px"></image>
+      <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 3px; top: -3px;"></image>
     </view>
   </view>
 </view>

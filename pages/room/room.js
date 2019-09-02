@@ -12,6 +12,8 @@ Page({
     connected: false,
     // 游戏是否开始
     gameStarted: false,
+    // 发送的消息类型
+    messageType: -1,
     // 麻将里的金
     jin: {},
     // 现在是否处于点击吃的状态
@@ -26,24 +28,24 @@ Page({
     currentUserName: '',
     // 按照出牌顺序下一个出牌的用户（如果没有碰杠胡时，就是当前用户，有碰杠胡时，记录按照顺序的下一个用户）
     physicalNextUserName: '',
-     // 庄家名称
-    bankerName: '',
     // 当前摸入的麻将id，用于在界面上和其它麻将分开（体现是刚摸入的）
     currentInMajiangId: -1,
     // 当前打出的麻将
     currentOutMajiang: {},
     // 剩余麻将数
     remainMajiangNum: 128,
-    // 四个方向的用户名称
-    topUserName: '',
-    leftUserName: '',
-    rightUserName: '',
-    bottomUserName: '',
-    // 四个方向的用户分数
-    topUserScore: '',
-    leftUserScore: '',
-    rightUserScore: '',
-    bottomUserScore: '',
+    // 是否展示计分牌
+    showScoreboard: false,
+    // 计分牌信息
+    scoreboard: {
+      result: '',
+      detail: []
+    },
+    // 四个方向的用户
+    topUser: '',
+    leftUser: '',
+    rightUser: '',
+    bottomUser: '',
     // 四个方向的用户手牌数组
     mjTopArray: [],
     mjLeftArray: [],
@@ -208,14 +210,14 @@ Page({
    * 吃牌操作
    */
   handleChi() {
-    if (this.data.currentUserName !== this.data.bottomUserName) {
+    if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
       wx.showToast({
         title: '没轮到你，不能吃哦',
         icon: 'none'
       })
       return
     }
-    if (this.data.physicalNextUserName !== this.data.bottomUserName) {
+    if (this.data.physicalNextUserName !== this.data.bottomUser.userNickName) {
       // 防止当前可碰可胡时轮到你你却点了吃（不合规则）
       wx.showToast({
         title: '根据规则，现在不能吃',
@@ -223,9 +225,16 @@ Page({
       })
       return
     }
+    if (this.data.currentOutMajiang.jin) {
+      wx.showToast({
+        title: '根据规则，金不能吃',
+        icon: 'none'
+      })
+      return
+    }
     const currentOutMjCode = this.data.currentOutMajiang.code
     const mjBottomArray = this.data.mjBottomArray
-    const canEatMjCodeArray = mjBottomArray.map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
+    const canEatMjCodeArray = mjBottomArray.filter(mj => !mj.show && !mj.anGang && !mj.jin).map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
     const canChiArray = []
     let mjId1, mjId2
     // 判断当前是否可吃，以及可能存在的吃法
@@ -245,6 +254,8 @@ Page({
       canChiArray.push(currentOutMjCode + 1, currentOutMjCode + 2)
     }
     if (mjId1 && mjId2) {
+      console.log(mjId1)
+      console.log(mjId2)
       wx.showToast({
         title: '请选择吃的牌',
         icon: 'success'
@@ -265,9 +276,16 @@ Page({
    * 碰牌操作
    */
   handlePeng() {
+    if (this.data.currentOutMajiang.jin) {
+      wx.showToast({
+        title: '根据规则，金不能碰',
+        icon: 'none'
+      })
+      return
+    }
     const currentOutMjCode = this.data.currentOutMajiang.code
     const mjBottomArray = this.data.mjBottomArray
-    if (mjBottomArray.filter(mj => mj.code === currentOutMjCode).length >= 2) {
+    if (mjBottomArray.filter(mj => mj.code === currentOutMjCode && !mj.show && !mj.anGang && !mj.jin).length >= 2) {
       wx.sendSocketMessage({
         data: JSON.stringify({
           type: constant.MJ_PENG,
@@ -315,10 +333,17 @@ Page({
   },
 
   /**
-   * 胡牌操作，如果能胡则直接胡，不能胡该按钮点了没有用（也没有提示）
+   * 胡牌操作，如果能胡则直接胡，不能胡该按钮点了没有用（也没有提示），判断胡牌的逻辑在后端进行
    */
   handleHu() {
-    if (this.data.currentUserName !== this.data.bottomUserName) {
+    if (this.data.currentOutMajiang.jin && !this.data.currentInMajiang) {
+      wx.showToast({
+        title: '根据规则，不能胡打出去的金',
+        icon: 'none'
+      })
+      return
+    }
+    if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
       wx.showToast({
         title: '没轮到你，不能胡哦',
         icon: 'none'
@@ -347,7 +372,7 @@ Page({
    * 过牌操作，即跳过碰、杠或胡时才有用，否则点了没用
    */
   handlePass() {
-    if (this.data.currentUserName !== this.data.bottomUserName) {
+    if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
       wx.showToast({
         title: '没轮到你，点击无效',
         icon: 'none'
@@ -366,52 +391,51 @@ Page({
    * 准备操作，即开启websocket连接
    */
   handleReady: function() {
-    if (this.data.connected) {
-      wx.showToast({
-        title: '已准备，不用重复准备',
-        icon: 'none'
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.CLIENT_READY,
+        message: '准备'
       })
-      return
-    }
-    wx.connectSocket({
-      url: 'ws://192.168.43.74:8080/game/' + encodeURI(app.globalData.userInfo.nickName)
     })
   },
 
   /**
-   * 游戏开始操作
+   * 取消计分板显示
    */
-  handleStartGame: function() {
-    if (!this.data.connected) {
-      wx.showToast({
-        title: '请先准备！',
-        icon: 'success'
-      })
-      return
-    }
-    if (this.data.gameStarted) {
-      wx.showToast({
-        title: '游戏正在进行中'
-      })
-    } else {
-      wx.sendSocketMessage({
-        data: JSON.stringify({
-          type: constant.START_GAME,
-          message: 'start game'
-        })
-      })
-    }
+  hideScoreBoard: function() {
+    this.setData({showScoreboard: false})
+  },
+
+  /**
+   * 退出游戏，玩家下线
+   */
+  handleQuitGame: function() {
+    wx.closeSocket()
+    wx.navigateBack()
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function(options) {
+    // 连接房间
+    wx.connectSocket({
+      url: 'wss://mj.sjtudoit.com/game/' + encodeURI(app.globalData.userInfo.nickName)
+    })
     // 响应接收到webSocket消息时的操作
     wx.onSocketMessage((res) => {
       // 游戏对象
       const game = JSON.parse(res.data)
       console.log(game)
+
+      // 当房间人数已满时自动退出
+      if (game.messageType === constant.INFO && game.message === '房间人数已满') {
+        wx.showToast({
+          title: '房间人数已满4人，系统自动退出',
+          icon: 'none'
+        })
+        return;
+      }
 
       const currentUserName = game.currentUserName
       const currentOutMajiang = game.currentOutMajiang
@@ -422,6 +446,10 @@ Page({
         if (user.userNickName === app.globalData.userInfo.nickName) {
           myIndex = index
         }
+        // 判断当前打出的麻将是哪个
+        if (user.outList.length > 0 && currentOutMajiang && user.outList[user.outList.length - 1].id === currentOutMajiang.id) {
+          user.outList[user.outList.length - 1].isCurrent = true
+        }
       })
 
       // 确定游戏的玩家显示顺序
@@ -431,21 +459,35 @@ Page({
       const leftUser = game.userList[(myIndex + 3) % 4];
 
       const innerAudioContext = wx.createInnerAudioContext()
+
       switch(game.messageType) {
-        case constant.GAMER_NOT_ENOUGH: {
+        case constant.INFO: {
+          // 有玩家进入房间时广播的信息
           wx.showToast({
-            title: '人数未满4人，不能开局',
+            title: game.message,
             icon: 'none'
           })
-          return;
+          if (game.remainMajiangList.length > 0 && game.jin) {
+            // 说明进入时游戏已经开始，不需要再准备
+            this.setData({ connected: true, gameStarted: true, jin: game.jin })
+          } else {
+            if (game.message.includes(app.globalData.userInfo.nickName)) {
+              // 说明进入时游戏还没开始，需要再次准备
+              this.setData({ connected: false, gameStarted: false })
+            }
+          }
+          break;
         }
         case constant.CLIENT_READY: {
+          // 玩家准备信息
           wx.showToast({
-            title: '准备成功',
-            icon: 'success'
+            title: game.message + '已准备！',
+            icon: 'none'
           })
-          this.setData({ connected: true })
-          return;
+          if (game.message === bottomUser.userNickName) {
+            this.setData({ connected: true })
+          }
+          break;
         }
         case constant.START_GAME: {
           wx.showToast({
@@ -455,15 +497,12 @@ Page({
           break;
         }
         case constant.RESET_FLOWER: {
+          // 游戏开始时补花
           if (game.jin && game.jin.name) {
             wx.showToast({
               title: `开金！金是${game.jin.name}`
             })
             this.setData({jin: game.jin})
-            console.log("上方玩家是否能抢金" + topUser.canQiangJin);
-            console.log("左方玩家是否能抢金" + leftUser.canQiangJin);
-            console.log("右方玩家是否能抢金" + rightUser.canQiangJin);
-            console.log("下方玩家是否能抢金" + bottomUser.canQiangJin);
             // 判断自己是否能抢金
             if (bottomUser.canQiangJin) {
                this.setData({canQiangJin: true})
@@ -508,11 +547,89 @@ Page({
           innerAudioContext.play()
           break;
         }
-        case constant.MJ_HU: {
+        case constant.HU_PING_HU: {
           innerAudioContext.src = '/assets/sound/hu.mp3';
           innerAudioContext.play()
           wx.showToast({
-            title: `${game.currentUserName} 胡`,
+            title: `${game.currentUserName} 平胡`,
+            icon: 'none'
+          })
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: constant.GAME_OVER,
+              message: '游戏结束'
+            })
+          })
+          this.setData({scoreboard: {result: '平胡'}})
+          break;
+        }
+        case constant.HU_ZI_MO: {
+          innerAudioContext.src = '/assets/sound/hu.mp3';
+          innerAudioContext.play()
+          wx.showToast({
+            title: `${game.currentUserName} 自摸`,
+            icon: 'none'
+          })
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: constant.GAME_OVER,
+              message: '游戏结束'
+            })
+          })
+          this.setData({ scoreboard: { result: '自摸' } })
+          break;
+        }
+        case constant.HU_QIANG_JIN: {
+          innerAudioContext.src = '/assets/sound/hu.mp3';
+          innerAudioContext.play()
+          wx.showToast({
+            title: `${game.currentUserName} 抢金`,
+            icon: 'none'
+          })
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: constant.GAME_OVER,
+              message: '游戏结束'
+            })
+          })
+          this.setData({ scoreboard: { result: '抢金' } })
+          break;
+        }
+        case constant.HU_THREE_JIN: {
+          innerAudioContext.src = '/assets/sound/hu.mp3';
+          innerAudioContext.play()
+          wx.showToast({
+            title: `${game.currentUserName} 三金倒`,
+            icon: 'none'
+          })
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: constant.GAME_OVER,
+              message: '游戏结束'
+            })
+          })
+          this.setData({ scoreboard: { result: '三金倒' } })
+          break;
+        }
+        case constant.HU_JIN_QUE: {
+          innerAudioContext.src = '/assets/sound/hu.mp3';
+          innerAudioContext.play()
+          wx.showToast({
+            title: `${game.currentUserName} 金雀`,
+            icon: 'none'
+          })
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: constant.GAME_OVER,
+              message: '游戏结束'
+            })
+          })
+          this.setData({ scoreboard: { result: '金雀' } })
+          break;
+        }
+        case constant.MJ_TIE: {
+          wx.showToast({
+            title: '和局',
             icon: 'success'
           })
           wx.sendSocketMessage({
@@ -521,26 +638,23 @@ Page({
               message: '游戏结束'
             })
           })
+          this.setData({ scoreboard: { result: '和局' } })
           break;
         }
         case constant.GAME_OVER: {
-          this.setData({ gameStarted: false })
+          const scoreboard = this.data.scoreboard
+          scoreboard.detail = game.userList.map(user => {
+            return {
+              userNickName: user.userNickName,
+              score: user.score,
+              scoreChange: user.scoreChange,
+              previousScore: user.score - user.scoreChange
+            }
+          })
+          this.setData({ connected: false, gameStarted: false, showScoreboard: true, scoreboard })
           break;
         }
         default: break;
-      }
-
-      if (this.data.gameStarted && game.remainMajiangList.length <= 16) {
-        // 剩余牌数小于16张时和局
-        wx.showToast({
-          title: '和局！'
-        })
-        wx.sendSocketMessage({
-          data: JSON.stringify({
-            type: constant.GAME_OVER,
-            message: '游戏结束'
-          })
-        })
       }
 
       const mjBottomArray = bottomUser.userMajiangList.map((item, index) => {
@@ -549,14 +663,17 @@ Page({
       })
       const mjRightArray = rightUser.userMajiangList.map((item, index) => {
         item.top = 0
+        // item.show = true
         return item
       })
       const mjTopArray = topUser.userMajiangList.map((item, index) => {
         item.top = 0
+        // item.show = true
         return item
       })
       const mjLeftArray = leftUser.userMajiangList.map((item, index) => {
         item.top = 0
+        // item.show = true
         return item
       })
 
@@ -566,20 +683,16 @@ Page({
       const mjLeftOutArray = [...leftUser.flowerList, ...leftUser.outList]
 
       this.setData({
+        messageType: game.messageType,
         currentOutMajiang: currentOutMajiang ? currentOutMajiang : {},
-        currentUserName,
-        bankerName: game.bankerName,
-        physicalNextUserName: game.physicalNextUserName,
+        currentUserName: currentUserName ? currentUserName : '',
+        physicalNextUserName: game.physicalNextUserName ? game.physicalNextUserName : 0,
         currentInMajiangId: currentInMajiang && currentInMajiang.id ? currentInMajiang.id : -1,
         remainMajiangNum: game.remainMajiangList.length,
-        topUserName: topUser.userNickName,
-        leftUserName: leftUser.userNickName,
-        rightUserName: rightUser.userNickName,
-        bottomUserName: bottomUser.userNickName,
-        topUserScore: topUser.score,
-        leftUserScore: leftUser.score,
-        rightUserScore: rightUser.score,
-        bottomUserScore: bottomUser.score,
+        topUser,
+        leftUser,
+        rightUser,
+        bottomUser,
         mjLeftArray,
         mjRightArray,
         mjTopArray,
@@ -632,12 +745,19 @@ Page({
     })
 
     wx.onSocketOpen(res => {
-      wx.sendSocketMessage({
-        data: JSON.stringify({
-          type: constant.CLIENT_READY,
-          message: 'ready'
-        })
+      wx.showToast({
+        title: '连接成功！',
+        icon: 'none'
       })
+      // 每隔10s发送一次心跳包，防止掉线
+      app.globalData.heartBeat = setInterval(() => {
+        wx.sendSocketMessage({
+          data: JSON.stringify({
+            type: constant.HEART_BEAT,
+            message: "心跳包"
+          })
+        })
+      }, 10000)
     })
 
     wx.onSocketClose(res => {
@@ -646,9 +766,9 @@ Page({
         title: '连接断开',
         icon: 'none'
       })
-      this.setData({
-        connected: false,
-        jin: {}
+      // 如果连接断开则跳转到首页，退出房间
+      wx.navigateTo({
+        url: '../index/index'
       })
     })
   },
@@ -678,7 +798,7 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function() {
-
+    clearInterval(app.globalData.heartBeat)
   },
 
   /**

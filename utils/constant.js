@@ -20,3 +20,4 @@ export const HU_JIN_QUE = 17;
 export const MJ_TIE = 18;
 export const INFO = 19;
 export const GAME_OVER = 20;
+export const CHAT = 101;

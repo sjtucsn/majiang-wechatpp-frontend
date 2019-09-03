@@ -17,6 +17,7 @@
       <button onclick="handleOut()">出牌</button>
       <button onclick="handlePass()">过</button>
 	    <button onclick="closeWebSocket()">退出</button>
+	    <button onclick="sendMessage()">发送语音</button>
       <div id="message" style="width: 100%"></div>
 </body>
 
@@ -30,6 +31,10 @@
 
   function connect() {
     websocket.send(JSON.stringify({ type: 0, message: '准备好了' }))
+  }
+
+  function sendMessage() {
+	  websocket.send(JSON.stringify({ type: 101, message: document.getElementById('text').value, userName: document.getElementById('account').value }))
   }
 
   function openWebSocket() {

@@ -12,6 +12,26 @@ Page({
     connected: false,
     // 游戏是否开始
     gameStarted: false,
+    // 是否展示对话框
+    showDialog: false,
+    // 聊天内容数组
+    dialogContentList: [
+      '哎，这牌太臭了',
+      '打快点，磨磨矶矶的',
+      '杠你，没商量',
+      '我要胡牌啦',
+      '哈哈，金将来一个',
+      '累了，不打了',
+      '有事，下次再玩',
+      '三头金，运气不错',
+      '我要抢金啦'
+    ],
+    dialogPosition: [
+      { left: 0, top: 0, show: false, message: '' },
+      { left: 0, top: 0, show: false, message: '' },
+      { left: 0, top: 0, show: false, message: '' },
+      { left: 0, top: 0, show: false, message: '' },
+    ],
     // 发送的消息类型
     messageType: -1,
     // 麻将里的金
@@ -59,9 +79,35 @@ Page({
   },
 
   /**
+   * 打开对话框操作
+   */
+  showDialog() {
+    this.setData({ showDialog: true })
+  },
+
+  /**
+    * 关闭对话框操作
+    */
+  closeDialog() {
+    this.setData({ showDialog: false })
+  },
+
+  handleSendMessage: function (e) {
+    const index = e.currentTarget.dataset.index
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.CHAT,
+        message: this.data.dialogContentList[index],
+        userName: app.globalData.userInfo.nickName
+      })
+    })
+    this.setData({ showDialog: false })
+  },
+
+  /**
    * 麻将子选中操作
    */
-  handleChoose: function(e) {
+  handleChoose: function (e) {
     const mj = this.data.mjBottomArray[e.currentTarget.dataset.index]
     if (mj.show || mj.anGang || mj.jin) {
       // 已经吃、碰、杠的牌和金不能打
@@ -80,7 +126,7 @@ Page({
         return item
       })
       const chiArray = mjBottomArray.filter(mj => mj.top !== 0)
-      
+
       if (chiArray.length === 2) {
         // 如果有两张牌被选中，且符合吃的规则，则直接吃
         const chiArr = [chiArray[0], chiArray[1], this.data.currentOutMajiang]
@@ -242,12 +288,12 @@ Page({
       mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 2)[0].id
       mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
       canChiArray.push(currentOutMjCode - 2, currentOutMjCode - 1)
-    } 
+    }
     if (canEatMjCodeArray.includes(currentOutMjCode - 1) && canEatMjCodeArray.includes(currentOutMjCode + 1)) {
       mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
       mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
       canChiArray.push(currentOutMjCode - 1, currentOutMjCode + 1)
-    } 
+    }
     if (canEatMjCodeArray.includes(currentOutMjCode + 1) && canEatMjCodeArray.includes(currentOutMjCode + 2)) {
       mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
       mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 2)[0].id
@@ -306,9 +352,9 @@ Page({
   handleGang() {
     const currentOutMjCode = this.data.currentOutMajiang.code
     const mjBottomArray = this.data.mjBottomArray
-   
-    if (mjBottomArray.filter(mj => mj.code === currentOutMjCode).length === 3) {
-      // 开杠，直接杠别人打出的麻将
+
+    if (mjBottomArray.filter(mj => !mj.show && mj.code === currentOutMjCode).length === 3) {
+      // 开杠，直接杠别人打出的麻将（不能杠已经碰的麻将）
       wx.sendSocketMessage({
         data: JSON.stringify({
           type: constant.MJ_GANG,
@@ -390,7 +436,7 @@ Page({
   /**
    * 准备操作，即开启websocket连接
    */
-  handleReady: function() {
+  handleReady: function () {
     wx.sendSocketMessage({
       data: JSON.stringify({
         type: constant.CLIENT_READY,
@@ -402,31 +448,71 @@ Page({
   /**
    * 取消计分板显示
    */
-  hideScoreBoard: function() {
-    this.setData({showScoreboard: false})
+  hideScoreBoard: function () {
+    this.setData({ showScoreboard: false })
   },
 
   /**
    * 退出游戏，玩家下线
    */
-  handleQuitGame: function() {
+  handleQuitGame: function () {
     wx.closeSocket()
-    wx.navigateBack()
+    wx.redirectTo({
+      url: '../index/index'
+    })
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad: function(options) {
+  onLoad: function (options) {
     // 连接房间
     wx.connectSocket({
-      url: 'wss://mj.sjtudoit.com/game/' + encodeURI(app.globalData.userInfo.nickName)
+      url: 'ws://192.168.1.105:8080/game/' + encodeURI(app.globalData.userInfo.nickName)
     })
     // 响应接收到webSocket消息时的操作
     wx.onSocketMessage((res) => {
       // 游戏对象
       const game = JSON.parse(res.data)
       console.log(game)
+
+      // 处理聊天消息
+      if (game.type === constant.CHAT) {
+        // 定位聊天框出现的位置
+        const query = wx.createSelectorQuery()
+        query.select('#top-user').boundingClientRect()
+        query.select('#left-user').boundingClientRect()
+        query.select('#right-user').boundingClientRect()
+        query.select('#bottom-user').boundingClientRect()
+        const dialogPosition = this.data.dialogPosition
+        query.exec((res) => {
+          res.forEach((item, index) => {
+            dialogPosition[index].left = item.left + item.width / 2 + 'px'
+            dialogPosition[index].top = item.top - 35 + 'px'
+          })
+          let i
+          if (game.userName === this.data.topUser.userNickName) {
+            i = 0
+          } else if (game.userName === this.data.leftUser.userNickName) {
+            i = 1
+          } else if (game.userName === this.data.rightUser.userNickName) {
+            i = 2
+          } else if (game.userName === this.data.bottomUser.userNickName) {
+            i = 3
+          }
+          if (i !== undefined) {
+            dialogPosition[i].show = true
+            dialogPosition[i].message = game.message
+            this.setData({ dialogPosition })
+            setTimeout(() => {
+              dialogPosition[i].show = false
+              dialogPosition[i].message = ''
+              this.setData({ dialogPosition })
+            }, 2000)
+          }
+        })
+        return;
+      }
 
       // 当房间人数已满时自动退出
       if (game.messageType === constant.INFO && game.message === '房间人数已满') {
@@ -460,7 +546,7 @@ Page({
 
       const innerAudioContext = wx.createInnerAudioContext()
 
-      switch(game.messageType) {
+      switch (game.messageType) {
         case constant.INFO: {
           // 有玩家进入房间时广播的信息
           wx.showToast({
@@ -502,10 +588,10 @@ Page({
             wx.showToast({
               title: `开金！金是${game.jin.name}`
             })
-            this.setData({jin: game.jin})
+            this.setData({ jin: game.jin })
             // 判断自己是否能抢金
             if (bottomUser.canQiangJin) {
-               this.setData({canQiangJin: true})
+              this.setData({ canQiangJin: true })
             }
           }
           innerAudioContext.src = '/assets/sound/buhua.ogg';
@@ -560,7 +646,7 @@ Page({
               message: '游戏结束'
             })
           })
-          this.setData({scoreboard: {result: '平胡'}})
+          this.setData({ scoreboard: { result: '平胡' } })
           break;
         }
         case constant.HU_ZI_MO: {
@@ -733,7 +819,7 @@ Page({
             })
           }, 1000)
         }
-      } 
+      }
     })
 
     wx.onSocketError(res => {
@@ -767,7 +853,7 @@ Page({
         icon: 'none'
       })
       // 如果连接断开则跳转到首页，退出房间
-      wx.navigateTo({
+      wx.redirectTo({
         url: '../index/index'
       })
     })
@@ -776,49 +862,49 @@ Page({
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
-  onReady: function() {
-
+  onReady: function () {
+    
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function() {
+  onShow: function () {
 
   },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide: function() {
+  onHide: function () {
 
   },
 
   /**
    * 生命周期函数--监听页面卸载
    */
-  onUnload: function() {
+  onUnload: function () {
     clearInterval(app.globalData.heartBeat)
   },
 
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
-  onPullDownRefresh: function() {
+  onPullDownRefresh: function () {
 
   },
 
   /**
    * 页面上拉触底事件的处理函数
    */
-  onReachBottom: function() {
+  onReachBottom: function () {
 
   },
 
   /**
    * 用户点击右上角分享
    */
-  onShareAppMessage: function() {
+  onShareAppMessage: function () {
 
   }
 })

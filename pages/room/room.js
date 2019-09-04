@@ -26,13 +26,16 @@ Page({
       '三头金，运气不错',
       '我要抢金啦'
     ],
+    // 四个玩家对话框位置数组
     dialogPosition: [
       { left: 0, top: 0, show: false, message: '' },
       { left: 0, top: 0, show: false, message: '' },
       { left: 0, top: 0, show: false, message: '' },
       { left: 0, top: 0, show: false, message: '' },
     ],
-    // 发送的消息类型
+    // 是否正在录音
+    isRecording: false,
+    // 接收的消息类型
     messageType: -1,
     // 麻将里的金
     jin: {},
@@ -92,6 +95,9 @@ Page({
     this.setData({ showDialog: false })
   },
 
+  /**
+   * 发送聊天信息
+   */
   handleSendMessage: function (e) {
     const index = e.currentTarget.dataset.index
     wx.sendSocketMessage({
@@ -102,6 +108,76 @@ Page({
       })
     })
     this.setData({ showDialog: false })
+  },
+
+  /**
+   * 提示长按录音
+   */
+  showAlert() {
+    wx.showToast({
+      title: '请长按录音！',
+      icon: 'none'
+    })
+  },
+
+  /**
+   * 开始录音
+   */
+  startRecording() {
+    const recorderManager = wx.getRecorderManager()
+    recorderManager.onStart(() => {
+      console.log('录音开始')
+      this.setData({isRecording: true})
+      wx.showLoading({
+        title: '正在录音中...'
+      })
+    })
+   
+    recorderManager.onStop((res) => {
+      wx.hideLoading()
+      this.setData({ isRecording: false })
+      const { tempFilePath } = res
+      wx.showModal({
+        title: '提示',
+        content: '是否发送语音？',
+        success(res) {
+          if (res.confirm) {
+            wx.uploadFile({
+              url: 'https://mj.sjtudoit.com/upload',
+              filePath: tempFilePath,
+              name: 'file',
+              success(res) {
+                if (res.data == "上传成功") {
+                  wx.showToast({
+                    title: '发送成功！'
+                  })
+                  wx.sendSocketMessage({
+                    data: JSON.stringify({
+                      type: constant.AUDIO_CHAT,
+                      message: tempFilePath.split("wxfile://")[1]
+                    })
+                  })
+                }
+              },
+              fail(res) {
+                console.log(res)
+                wx.showToast({
+                  title: '发送失败！',
+                  icon: 'none'
+                })
+              }
+            })
+          }
+        }
+      })
+    })
+
+    recorderManager.start({format: 'mp3', numberOfChannels: 1})
+  },
+
+  stopRecording() {
+    const recorderManager = wx.getRecorderManager()
+    recorderManager.stop()
   },
 
   /**
@@ -456,9 +532,15 @@ Page({
    * 退出游戏，玩家下线
    */
   handleQuitGame: function () {
-    wx.closeSocket()
-    wx.redirectTo({
-      url: '../index/index'
+    wx.showModal({
+      title: '提示',
+      content: '您确定要退出游戏吗',
+      success(res) {
+        if (res.confirm) {
+          wx.closeSocket()
+          wx.navigateBack()
+        }
+      }
     })
   },
 
@@ -468,13 +550,21 @@ Page({
   onLoad: function (options) {
     // 连接房间
     wx.connectSocket({
-      url: 'ws://192.168.1.105:8080/game/' + encodeURI(app.globalData.userInfo.nickName)
+      url: 'wss://mj.sjtudoit.com/game/' + encodeURI(app.globalData.userInfo.nickName)
     })
     // 响应接收到webSocket消息时的操作
     wx.onSocketMessage((res) => {
       // 游戏对象
       const game = JSON.parse(res.data)
       console.log(game)
+
+      const innerAudioContext = wx.createInnerAudioContext()
+
+      if (game.type === constant.AUDIO_CHAT) {
+        innerAudioContext.src = `https://mj.sjtudoit.com/audio/${game.message}`;
+        innerAudioContext.play()
+        return;
+      }
 
       // 处理聊天消息
       if (game.type === constant.CHAT) {
@@ -543,8 +633,6 @@ Page({
       const rightUser = game.userList[(myIndex + 1) % 4];
       const topUser = game.userList[(myIndex + 2) % 4];
       const leftUser = game.userList[(myIndex + 3) % 4];
-
-      const innerAudioContext = wx.createInnerAudioContext()
 
       switch (game.messageType) {
         case constant.INFO: {

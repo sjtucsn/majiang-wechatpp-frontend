@@ -398,6 +398,13 @@ Page({
    * 碰牌操作
    */
   handlePeng() {
+    if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
+      wx.showToast({
+        title: '没轮到你，不能碰哦',
+        icon: 'none'
+      })
+      return
+    }
     if (this.data.currentOutMajiang.jin) {
       wx.showToast({
         title: '根据规则，金不能碰',
@@ -426,6 +433,13 @@ Page({
    * 杠牌操作
    */
   handleGang() {
+    if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
+      wx.showToast({
+        title: '没轮到你，不能杠哦',
+        icon: 'none'
+      })
+      return
+    }
     const currentOutMjCode = this.data.currentOutMajiang.code
     const mjBottomArray = this.data.mjBottomArray
 

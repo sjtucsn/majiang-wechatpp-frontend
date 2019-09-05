@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>麻将玩家测试</title>
+</head>
+
+<body>
+  当前游客Id：<input id="account" value="test" />
+  <input id="text" type="text" value="4" />
+  <button onclick="handleIn()">摸牌</button>
+  <button onclick="handleReady()">准备</button>
+  <button onclick="handleChi()">吃</button>
+  <button onclick="handlePeng()">碰</button>
+  <button onclick="handleGang()">杠</button>
+  <button onclick="handleOut()">出牌</button>
+  <button onclick="handlePass()">过</button>
+  <button onclick="closeWebSocket()">退出</button>
+  <button onclick="sendMessage()">发送语音</button>
+  <div id="message" style="width: 100%"></div>
+</body>
+
+<script type="text/javascript">
+  let websocket = {}
+  let data = {}
+  let user = {}
+  let list3 = []
+  let list2Good = []
+  let list2Bad = []
+  let list1 = []
+  let ready = false
+  const userName = `玩家${Math.round(Math.random() * 100)}`
+  document.getElementById('account').value = userName
+  openWebSocket()
+
+  /**
+   * 准备
+   */
+  function handleReady() {
+    websocket.send(JSON.stringify({ type: 0, message: '准备好了' }))
+  }
+
+  /**
+   * 发送语音指令
+   */
+  function sendMessage() {
+    websocket.send(JSON.stringify({ type: 101, message: document.getElementById('text').value, userName }))
+  }
+
+  /**
+   * 开启websocket连接
+   */
+  function openWebSocket() {
+    websocket = new WebSocket(`wss://mj.sjtudoit.com/game/${userName}`);
+
+    //连接发生错误的回调方法
+    websocket.onerror = function () {
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：WebSocket连接发生错误"</div>`);
+    };
+
+    //连接成功建立的回调方法
+    websocket.onopen = function () {
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：连接成功</div>`);
+      websocket.send(JSON.stringify({ type: 0, message: '准备' }))
+      setInterval(() => {
+        websocket.send(JSON.stringify({ type: -1, message: '心跳包' }))
+      }, 10000)
+    }
+
+    //接收到消息的回调方法
+    websocket.onmessage = function (event) {
+      data = JSON.parse(event.data)
+
+      // 标记用户已准备
+      if (data.messageType === 0) {
+        if (data.message === userName) {
+          ready = true;
+        }
+        return
+      }
+
+      if (data.messageType === 20) {
+        if (!ready) {
+          // 游戏结束，重新准备，随机一个时间，防止电脑同时准备造成websocket拥堵
+          setTimeout(() => {
+            websocket.send(JSON.stringify({ type: 0, message: '准备' }))
+          }, Math.round(Math.random() * 1000))
+        }
+        return
+      }
+
+      if (data.messageType >= 13 && data.messageType <= 18) {
+        if (data.currentUserName === userName) {
+          setTimeout(() => {
+            websocket.send(JSON.stringify({ type: 20, message: '游戏结束' }))
+          }, 1000)
+        }
+        ready = false
+        return
+      }
+
+      // 不需要在意的信息
+      if (data.messageType === 19) {
+        return
+      }
+
+      if (data.type && data.type > 100) {
+        return
+      }
+
+      // 当前玩家对象
+      user = data.userList.filter(user => user.userNickName === userName)[0]
+      document.getElementById('message').innerHTML = ''
+      setMessageInnerHTML(`<div style="text-align: right">当前出牌${data.currentOutMajiang ? data.currentOutMajiang.name : ''}</div>`)
+      for (let mj of user.userMajiangList) {
+        setMessageInnerHTML(`<div style="float: left">${mj.name}&nbsp;&nbsp;`);
+      }
+
+      const currentUserName = data.currentUserName
+      const currentOutMajiang = data.currentOutMajiang
+      const currentInMajiang = data.currentInMajiang
+
+      // 轮到自己时
+      if (currentUserName === userName) {
+        // 开始阶段补花
+        if (!currentOutMajiang && !(currentInMajiang && currentInMajiang.id)) {
+          if (user.userMajiangList.filter(mj => mj.code > 30).length > 0) {
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 2, message: '开始阶段补花' }))
+            }, 100)
+            return
+          }
+        }
+        // 游戏开始到这一步可以结束，后面不用管了
+        if (data.messageType === 1) {
+          return
+        }
+        if (data.currentUserName !== data.physicalNextUserName) {
+          if (user.userMajiangList.filter(mj => !mj.anGang && !mj.show).length % 3 === 1) {
+            // 遇到吃碰等情况
+            const userMajiangList = [...user.userMajiangList]
+            userMajiangList.push({ ...currentOutMajiang })
+            setTimeout(() => {
+              if (canHu(userMajiangList, true)) {
+                websocket.send(JSON.stringify({ type: 11, message: '胡' }))
+                console.log("平胡")
+              } else if (handleGang()) {
+                console.log("杠了")
+              } else if (handlePeng()) {
+                console.log("碰了")
+              } else {
+                console.log("不知道要怎么打，先过吧")
+                websocket.send(JSON.stringify({ type: 12, message: '不知道要怎么打，先过吧' }))
+              }
+            }, 1000)
+            return
+          }
+        }
+        // 正常打牌
+        const showNum = user.userMajiangList.filter(mj => mj.anGang || mj.show).length
+        if (currentOutMajiang && currentInMajiang) {
+          if (currentInMajiang.code > 30) {
+            // 摸到的是花
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 5, message: '补花' }))
+            }, 100)
+          } else {
+            // 摸到的不是花，先判断是不是自摸，如果不是则根据算法打掉一张牌
+            if (canHu(user.userMajiangList, true)) {
+              websocket.send(JSON.stringify({ type: 11, message: '胡' }))
+              console.log("自摸")
+              return
+            }
+            const outCode = selectOutMajiang(user.userMajiangList)
+            const index = user.userMajiangList.filter(mj => !mj.anGang && !mj.show).map(mj => mj.code).indexOf(outCode) + showNum
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 3, message: index }))
+            }, 1000)
+          }
+        } else {
+          // 牌数刚好时则要出牌
+          if (user.userMajiangList.filter(mj => !mj.anGang && !mj.show).length % 3 === 2) {
+            const outCode = selectOutMajiang(user.userMajiangList)
+            const index = user.userMajiangList.filter(mj => !mj.anGang && !mj.show).map(mj => mj.code).indexOf(outCode) + showNum
+            setTimeout(() => {
+              websocket.send(JSON.stringify({ type: 3, message: index }))
+            }, 1000)
+            return
+          }
+          // 判断胡杠碰吃，否则抓牌（庄家第一次出牌时可能会遇到这里的messageType还为2的情况，要避免）
+          if (data.messageType !== 2) {
+            setTimeout(() => {
+              const userMajiangList = [...user.userMajiangList]
+              userMajiangList.push({ ...currentOutMajiang })
+              if (canHu(userMajiangList, true)) {
+                websocket.send(JSON.stringify({ type: 11, message: '胡' }))
+                console.log("平胡")
+              } else if (handleGang()) {
+                console.log("杠了")
+              } else if (handlePeng()) {
+                console.log("碰了")
+              } else if (handleChi()) {
+                console.log("吃了")
+              } else {
+                websocket.send(JSON.stringify({ type: 4, message: '抓牌' }))
+              }
+            }, 1000)
+          }
+        }
+      }
+    }
+
+    //连接关闭的回调方法
+    websocket.onclose = function () {
+      setMessageInnerHTML(`<div style="text-align: center">系统消息：WebSocket连接关闭</div>`);
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function () {
+      closeWebSocket();
+    }
+  }
+
+  /**
+   * 判断是否能胡
+   * @param userMajiangList 用户的麻将数组
+   * @param shouldCheck3Jin 是否检查三头金
+   * @returns {*|boolean|boolean}
+   */
+  function canHu(userMajiangList, shouldCheck3Jin) {
+    const mjCodeArray = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+    const jinNum = userMajiangList.filter(mj => mj.jin).length
+    const mjList = userMajiangList.filter(mj => !mj.anGang && !mj.show && !mj.jin).map(mj => mj.code)
+
+    if (jinNum === 3) {
+      if (shouldCheck3Jin) {
+        // 三头金直接胡
+        return true;
+      }
+    }
+
+    if (jinNum === 2) {
+      // 两头金时的判断
+      for (let code1 of mjCodeArray) {
+        const tmpList1 = [...mjList, code1]
+        for (let code2 of mjCodeArray) {
+          const tmpList2 = [...tmpList1, code2]
+          tmpList2.sort((a, b) => a - b)
+          if (canHuWithQue(tmpList2)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    if (jinNum === 1) {
+      // 一头金时的判断
+      for (let code1 of mjCodeArray) {
+        const tmpList1 = [...mjList, code1]
+        tmpList1.sort((a, b) => a - b);
+        if (canHuWithQue(tmpList1)) {
+          return true;
+        }
+      }
+    }
+
+    if (jinNum === 0) {
+      // 没有金时的判断
+      return canHuWithQue(mjList);
+    }
+
+    return false;
+  }
+
+  /**
+   * 判断当前顺子+刻子+雀能否胡牌
+   * @param mjList 麻将code数组
+   * @returns {boolean}
+   */
+  function canHuWithQue(mjList) {
+    console.log(mjList)
+    if (mjList.length === 2) {
+      return mjList[0] === mjList[1]
+    } else {
+      for (let i = 0; i < mjList.length - 1; i++) {
+        const tmpList = [...mjList]
+        if (tmpList[i] === tmpList[i + 1]) {
+          tmpList.splice(i, 2)
+          if (canHuWithoutQue(tmpList)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  }
+
+  /**
+   * 判断当前的顺子+刻子是否组成胡牌结构（雀已经先筛选掉了）
+   * @param mjList 麻将code数组
+   * @returns {boolean}
+   */
+  function canHuWithoutQue(mjList) {
+    if (mjList.length === 0) {
+      return true
+    } else {
+      if (mjList[0] === mjList[1] && mjList[1] === mjList[2]) {
+        mjList.splice(0, 3)
+        return canHuWithoutQue(mjList)
+      } else {
+        const index1 = 0;
+        const index2 = mjList.indexOf(mjList[0] + 1)
+        const index3 = mjList.indexOf(mjList[0] + 2)
+        if (index2 !== -1 && index3 !== -1) {
+          mjList.splice(index1, 1)
+          mjList.splice(index2 - 1, 1)
+          mjList.splice(index3 - 2, 1)
+          return canHuWithoutQue(mjList)
+        } else {
+          return false
+        }
+      }
+    }
+  }
+
+  //将消息显示在网页上
+  function setMessageInnerHTML(innerHTML) {
+    document.getElementById('message').innerHTML += innerHTML;
+  }
+
+  //关闭WebSocket连接
+  function closeWebSocket() {
+    websocket.close();
+  }
+
+  //发送消息
+  function send() {
+    if (document.getElementById('text').value === '') {
+      alert('发送消息不能为空！')
+      return
+    }
+    const data = { message: 0, type: document.getElementById('text').value }
+    document.getElementById('text').value = 4;
+    const body = { event: 'message', data: data }
+    websocket.send(JSON.stringify(data));
+  }
+
+  function handleIn() {
+    websocket.send(JSON.stringify({ type: 4, message: '摸牌' }))
+  }
+
+  function handleOut() {
+    websocket.send(JSON.stringify({ type: 3, message: document.getElementById('text').value }))
+  }
+
+  function handlePass() {
+    websocket.send(JSON.stringify({ type: 12, message: '过' }))
+  }
+
+  function handleChi() {
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList.filter(mj => !mj.jin && !mj.anGang && !mj.show)
+    const canEatMjCodeArray = mjBottomArray.map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
+    let mjId1, mjId2
+    if (canEatMjCodeArray.includes(currentOutMjCode - 2) && canEatMjCodeArray.includes(currentOutMjCode - 1)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 2)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
+    } else if (canEatMjCodeArray.includes(currentOutMjCode - 1) && canEatMjCodeArray.includes(currentOutMjCode + 1)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode - 1)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
+    } else if (canEatMjCodeArray.includes(currentOutMjCode + 1) && canEatMjCodeArray.includes(currentOutMjCode + 2)) {
+      mjId1 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 1)[0].id
+      mjId2 = mjBottomArray.filter(mj => mj.code === currentOutMjCode + 2)[0].id
+    }
+    if (mjId1 && mjId2) {
+      const arr = [data.currentOutMajiang.id, mjId1, mjId2].sort((a, b) => a - b)
+      // 判断是否该吃它
+      if (shouldChi()) {
+        websocket.send(JSON.stringify({type: 6, message: `${arr[0]} ${arr[1]} ${arr[2]}`}))
+        return true
+      } else {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+
+  function shouldChi() {
+    const userMajiangList = [...user.userMajiangList, data.currentOutMajiang]
+    selectOutMajiang(userMajiangList)
+    if (list1.includes(data.currentOutMajiang.code)) {
+      // 如果吃了以后这张牌又成了单牌，则不吃
+      return false
+    } else {
+      return true
+    }
+  }
+
+  function handlePeng() {
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList
+    if (mjBottomArray.filter(mj => !mj.jin && !mj.anGang && !mj.show && mj.code === currentOutMjCode).length >= 2) {
+      websocket.send(JSON.stringify({ type: 7, message: '碰' }))
+      return true
+    } else {
+      return false
+    }
+  }
+
+  function handleGang() {
+    console.log(data)
+    const currentOutMjCode = data.currentOutMajiang.code
+    const mjBottomArray = user.userMajiangList
+    if (mjBottomArray.filter(mj => !mj.jin && !mj.anGang && !mj.show && mj.code === currentOutMjCode).length === 3) {
+      websocket.send(JSON.stringify({ type: 8, message: '杠' }))
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * 选出下一张该出牌的麻将
+   * @param userMajiangList
+   * @returns {number | bigint | string|*}
+   */
+  function selectOutMajiang(userMajiangList) {
+    const mjList = userMajiangList.filter(mj => !mj.anGang && !mj.show && !mj.jin).map(mj => mj.code).sort((a, b) => a - b)
+    list3 = []
+    list2Good = []
+    list2Bad = []
+    while (mjList.length > 2) {
+      const listWith3 = select3(mjList);
+      if (listWith3.length === 0) {
+         while (mjList.length > 1) {
+           const listWith2Good = select2Good(mjList);
+           if (listWith2Good.length === 0) {
+             while (mjList.length > 1) {
+               const listWith2Bad = select2Bad(mjList);
+               if (listWith2Good.length === 0) {
+                 break;
+               } else {
+                 list2Bad.push(...listWith2Bad)
+               }
+             }
+             break;
+           } else {
+             list2Good.push(...listWith2Good)
+           }
+         }
+         break;
+      } else {
+        list3.push(...listWith3)
+      }
+    }
+    list1 = [...mjList]
+    console.log(list3)
+    console.log(list2Good)
+    console.log(list2Bad)
+    console.log(list1)
+    if (list1.length > 0) {
+      return list1[Math.floor(Math.random() * list1.length)]
+    } else if (list2Bad.length > 0) {
+      return list2Bad[Math.floor(Math.random() * list2Bad.length)]
+    } else if (list2Good.length > 0) {
+      // 当雀和2,3同时存在时
+      return list2Good[Math.floor(Math.random() * list2Good.length)]
+    }
+  }
+
+  /**
+   * 选出所有的顺子和刻子
+   * @param mjList
+   * @returns {Array}
+   */
+  function select3(mjList) {
+    const tmpList = []
+    for (let i = 0; i < mjList.length; i++) {
+      // 判断顺子
+      const code1 = mjList[i]
+      const code2 = code1 + 1
+      const code3 = code2 + 1
+
+      const index1 = i;
+      const index2 = mjList.indexOf(code2)
+      const index3 = mjList.indexOf(code3)
+
+      if (index2 !== -1 && index3 !== -1) {
+        mjList.splice(index1, 1)
+        mjList.splice(index2 - 1, 1)
+        mjList.splice(index3 - 2, 1)
+        tmpList.push(code1, code2, code3)
+        return tmpList
+      }
+
+      // 判断刻子
+      if (mjList[i] === mjList[i + 1] && mjList[i + 1] === mjList[i + 2]) {
+        mjList.splice(i, 3)
+        tmpList.push(code1, code1, code1)
+        return tmpList
+      }
+    }
+    return tmpList
+  }
+
+  /**
+   * 选出雀和2,3
+   * @param mjList
+   * @returns {Array}
+   */
+  function select2Good(mjList) {
+    const tmpList = []
+    for (let i = 0; i < mjList.length; i++) {
+      const code1 = mjList[i]
+      const code2 = code1 + 1
+      const code3 = code2 + 1
+
+      const index1 = i;
+      const index2 = mjList.indexOf(code2)
+
+      // 判断2,3
+      if (index2 !== -1 && code1 % 10 !== 1 && code3 % 10 !== 0) {
+        mjList.splice(index1, 1)
+        mjList.splice(index2 - 1, 1)
+        tmpList.push(code1, code2)
+        return tmpList
+      }
+
+      // 判断对子
+      if (mjList[i] === mjList[i + 1]) {
+        mjList.splice(i, 2)
+        tmpList.push(code1, code1)
+        return tmpList
+      }
+    }
+    return tmpList
+  }
+
+  /**
+   * 选出1,3和1,2
+   * @param mjList
+   * @returns {Array}
+   */
+  function select2Bad(mjList) {
+    const tmpList = []
+    for (let i = 0; i < mjList.length; i++) {
+      const code1 = mjList[i]
+      const code2 = code1 + 1
+      const code3 = code2 + 1
+
+      const index1 = i;
+      const index2 = mjList.indexOf(code2)
+      const index3 = mjList.indexOf(code3)
+
+      // 判断1,2和8,9
+      if (index2 !== -1) {
+        mjList.splice(index1, 1)
+        mjList.splice(index2 - 1, 1)
+        tmpList.push(code1, code2)
+        return tmpList
+      }
+
+      // 判断1,3，防止9,10,11这样的出现
+      if (index3 !== -1 && code2 % 10 !== 0) {
+        mjList.splice(index1, 1)
+        mjList.splice(index3 - 1, 1)
+        tmpList.push(code1, code3)
+        return tmpList
+      }
+    }
+    return tmpList
+  }
+</script>
+
+</html>

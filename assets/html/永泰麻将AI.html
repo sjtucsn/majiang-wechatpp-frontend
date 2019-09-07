@@ -70,6 +70,11 @@
 
     //接收到消息的回调方法
     websocket.onmessage = function (event) {
+      // 聊天信息自动忽略
+      if (JSON.parse(event.data).type) {
+        return
+      }
+
       data = JSON.parse(event.data)
 
       // 标记用户已准备
@@ -102,10 +107,6 @@
 
       // 不需要在意的信息
       if (data.messageType === 19) {
-        return
-      }
-
-      if (data.type && data.type > 100) {
         return
       }
 
@@ -267,6 +268,7 @@
 
     if (jinNum === 0) {
       // 没有金时的判断
+      mjList.sort((a, b) => a - b)
       return canHuWithQue(mjList);
     }
 

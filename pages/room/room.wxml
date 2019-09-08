@@ -35,14 +35,14 @@
 
   <view style="display: flex; justify-content: center;">
     <view style="margin-top: 22vh; color: white; font-size: 16px;">
-      <view wx:if="{{topUser.score}}" class="top-user {{currentUserName === topUser.userNickName ? 'name-select': ''}}">
+      <view wx:if="{{topUser}}" class="top-user {{currentUserName === topUser.userNickName ? 'name-select': ''}}">
         <text id="top-user">{{topUser.userNickName}}{{topUser.userNickName ? '(' + topUser.score + ')' : ''}}{{topUser.banker ? '庄' : ''}}{{topUser.ready ? '(准备)' : ''}}</text>
         <view wx:if="{{dialogPosition[0].show}}" id="top-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[0].left}}; top: {{dialogPosition[0].top}}">
           <view class="user-message">{{dialogPosition[0].message}}</view>
         </view>
       </view>
 
-      <view wx:if="{{leftUser.score}}" class="left-user {{currentUserName === leftUser.userNickName ? 'name-select': ''}}">
+      <view wx:if="{{leftUser}}" class="left-user {{currentUserName === leftUser.userNickName ? 'name-select': ''}}">
         <text id="left-user">{{leftUser.userNickName}}{{leftUser.userNickName ? '(' + leftUser.score + ')' : ''}}{{leftUser.banker ? '庄' : ''}}{{leftUser.ready ? '(准备)' : ''}}</text>
         <view wx:if="{{dialogPosition[1].show}}" id="left-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[1].left}}; top: {{dialogPosition[1].top}}">
           <view class="user-message">{{dialogPosition[1].message}}</view>
@@ -52,14 +52,14 @@
       <image src="/assets/img/desktop.png" style="width: 104px; height: 104px; position: relative; left: 14px;"></image>
       <image src="/assets/img/{{jin.code}}.png" style="width: 28px; height: 40px; position: relative; left: -55px; top: -29px; background: white; border: solid 3px orange"></image>
 
-      <view wx:if="{{rightUser.score}}" class="right-user {{currentUserName === rightUser.userNickName ? 'name-select': ''}}">
+      <view wx:if="{{rightUser}}" class="right-user {{currentUserName === rightUser.userNickName ? 'name-select': ''}}">
         <text id="right-user">{{rightUser.userNickName}}{{rightUser.userNickName ? '(' + rightUser.score + ')' : ''}}{{rightUser.banker ? '庄' : ''}}{{rightUser.ready ? '(准备)' : ''}}</text>
         <view wx:if="{{dialogPosition[2].show}}" id="right-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[2].left}}; top: {{dialogPosition[2].top}}">
           <view class="user-message">{{dialogPosition[2].message}}</view>
         </view>
       </view>
 
-      <view wx:if="{{bottomUser.score}}" class="bottom-user {{currentUserName === bottomUser.userNickName ? 'name-select': ''}}">
+      <view wx:if="{{bottomUser}}" class="bottom-user {{currentUserName === bottomUser.userNickName ? 'name-select': ''}}">
         <text id="bottom-user">{{bottomUser.userNickName}}{{bottomUser.userNickName ? '(' + bottomUser.score + ')' : ''}}{{bottomUser.banker ? '庄' : ''}}{{bottomUser.ready ? '(准备)' : ''}}</text>
         <view wx:if="{{dialogPosition[3].show}}" id="bottom-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[3].left}}; top: {{dialogPosition[3].top}}">
           <view class="user-message">{{dialogPosition[3].message}}</view>

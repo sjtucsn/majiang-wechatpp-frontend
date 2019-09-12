@@ -486,6 +486,18 @@ Page({
       })
       return
     }
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.MJ_HU,
+        message: '胡'
+      })
+    })
+  },
+
+  /**
+   * 抢金操作
+   */
+  handleQiangJin() {
     if (this.data.canQiangJin) {
       // 判断是否能抢金
       wx.sendSocketMessage({
@@ -494,13 +506,7 @@ Page({
           message: '抢金'
         })
       })
-    } else {
-      wx.sendSocketMessage({
-        data: JSON.stringify({
-          type: constant.MJ_HU,
-          message: '胡'
-        })
-      })
+      this.setData({canQiangJin: false})
     }
   },
 
@@ -551,7 +557,6 @@ Page({
       content: '您确定要退出游戏吗',
       success(res) {
         if (res.confirm) {
-          wx.closeSocket()
           wx.navigateBack()
         }
       }
@@ -562,9 +567,11 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    // 连接房间
-    wx.connectSocket({
-      url: 'wss://mj.sjtudoit.com/game/' + encodeURI(app.globalData.userInfo.nickName)
+    // 请求加载游戏信息
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.GET_GAME
+      })
     })
     // 响应接收到webSocket消息时的操作
     wx.onSocketMessage((res) => {
@@ -618,12 +625,8 @@ Page({
         return;
       }
 
-      // 当房间人数已满时自动退出
-      if (game.messageType === constant.INFO && game.message === '房间人数已满') {
-        wx.showToast({
-          title: '房间人数已满4人，系统自动退出',
-          icon: 'none'
-        })
+      // 判断用户下线提示
+      if (game.messageType === constant.INFO && game.message === app.globalData.userInfo.nickName + '退出房间') {
         return;
       }
 
@@ -924,39 +927,15 @@ Page({
       }
     })
 
-    wx.onSocketError(res => {
-      console.log(res)
-      wx.showToast({
-        title: '连接服务器失败！',
-        icon: 'none'
-      })
-    })
-
-    wx.onSocketOpen(res => {
-      wx.showToast({
-        title: '连接成功！',
-        icon: 'none'
-      })
-      // 每隔10s发送一次心跳包，防止掉线
-      app.globalData.heartBeat = setInterval(() => {
-        wx.sendSocketMessage({
-          data: JSON.stringify({
-            type: constant.HEART_BEAT,
-            message: "心跳包"
-          })
-        })
-      }, 10000)
-    })
-
     wx.onSocketClose(res => {
       console.log(res)
       wx.showToast({
-        title: '连接断开',
+        title: '连接关闭',
         icon: 'none'
       })
       // 如果连接断开则跳转到首页，退出房间
-      wx.redirectTo({
-        url: '../index/index'
+      wx.navigateBack({
+        delta: 2
       })
     })
   },
@@ -986,7 +965,11 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
-    clearInterval(app.globalData.heartBeat)
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.QUIT
+      })
+    })
   },
 
   /**

@@ -1,3 +1,6 @@
+export const QUIT = -4;
+export const GET_GAME = -3;
+export const CHOOSE_SEAT = -2;
 export const HEART_BEAT = -1;
 export const CLIENT_READY = 0;
 export const START_GAME = 1;

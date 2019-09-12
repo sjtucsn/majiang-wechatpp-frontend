@@ -9,10 +9,12 @@
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handlePeng">碰</button>
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleGang">杠</button>
     <button style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px; margin-right: 10px" size="mini" bindtap="handleHu">胡</button>
+
+    <button wx:if="{{ bottomUser.banker && canQiangJin && mjBottomArray.length === 16 || !bottomUser.banker && currentUserName === bottomUser.userNickName && canQiangJin}}" style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px;" size="mini" bindtap="handleQiangJin">抢金</button>
     <button wx:if="{{currentUserName === bottomUser.userNickName && currentUserName === physicalNextUserName && messageType > 2}}" style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handleAdd">摸</button>
     <button wx:if="{{currentUserName === bottomUser.userNickName && currentUserName !== physicalNextUserName && (messageType === 3 || messageType === 12) }}" style="padding: 3px; z-index: 10; font-size: 25px; line-height: 25px" size="mini" bindtap="handlePass">过</button>
   </view>
-  <image class='background' src="/assets/img/background.png" mode="aspectFill" style="z-index: -10"></image>
+  <image class='background' src="/assets/img/background.png" mode="aspectFill"></image>
 
   <view wx:if="{{showScoreboard}}" style="position: absolute; z-index: 100; width: 62vw; left: 19vw; top: 12vh; background: white; border-radius: 10px; font-size: 16px; padding: 10px 1vw">
     <view style="text-align: center; font-size: 24px; line-height: 30px">{{scoreboard.result}}</view>

@@ -12,12 +12,12 @@ Page({
   //事件处理函数
   bindViewTap: function() {
     wx.navigateTo({
-      url: '../room/room'
+      url: '../gameCenter/gameCenter'
     })
   },
   bindStartGame: function () {
     wx.navigateTo({
-      url: '../room/room'
+      url: '../gameCenter/gameCenter'
     })
   },
   onLoad: function () {

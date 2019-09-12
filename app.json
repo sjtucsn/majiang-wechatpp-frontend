@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/room/room",
-    "pages/logs/logs"
+    "pages/logs/logs",
+    "pages/gameCenter/gameCenter"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -2,12 +2,12 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <title>麻将玩家测试1.0</title>
+	<meta charset="UTF-8">
+	<title>麻将玩家测试1.0</title>
 </head>
 
 <body>
-  当前游客Id：<input id="account" value="test" />
+	当前游客Id：<input id="account" value="test" />
   <input id="text" type="text" value="4" />
   <button onclick="handleIn()">摸牌</button>
   <button onclick="handleReady()">准备</button>
@@ -62,7 +62,9 @@
     //连接成功建立的回调方法
     websocket.onopen = function () {
       setMessageInnerHTML(`<div style="text-align: center">系统消息：连接成功</div>`);
-      websocket.send(JSON.stringify({ type: 0, message: '准备' }))
+
+      // 选择座位
+	    websocket.send(JSON.stringify({ type: -2 }))
       setInterval(() => {
         websocket.send(JSON.stringify({ type: -1, message: '心跳包' }))
       }, 10000)
@@ -76,6 +78,11 @@
       }
 
       data = JSON.parse(event.data)
+
+	    if (data.messageType === 19 && data.message === userName + '进入房间') {
+         websocket.send(JSON.stringify({ type: 0, message: '准备' })) 
+         return
+      }
 
       // 标记用户已准备
       if (data.messageType === 0) {
@@ -139,7 +146,7 @@
         }
         if (data.currentUserName !== data.physicalNextUserName) {
           if (user.userMajiangList.filter(mj => !mj.anGang && !mj.show).length % 3 === 1) {
-            // 遇到吃碰等情况
+            // 遇到碰杠胡等情况
             const userMajiangList = [...user.userMajiangList]
             userMajiangList.push({ ...currentOutMajiang })
             setTimeout(() => {
@@ -333,6 +340,7 @@
 
   //关闭WebSocket连接
   function closeWebSocket() {
+    websocket.send(JSON.stringify({type: -4}));
     websocket.close();
   }
 
@@ -361,6 +369,10 @@
   }
 
   function handleChi() {
+    if (!data.currentOutMajiang) {
+      // 防错代码
+      return false
+    }
     const currentOutMjCode = data.currentOutMajiang.code
     const mjBottomArray = user.userMajiangList.filter(mj => !mj.jin && !mj.anGang && !mj.show)
     const canEatMjCodeArray = mjBottomArray.map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
@@ -401,6 +413,10 @@
   }
 
   function handlePeng() {
+    if (!data.currentOutMajiang) {
+			// 防错代码
+      return false
+    }
     const currentOutMjCode = data.currentOutMajiang.code
     const mjBottomArray = user.userMajiangList
     if (mjBottomArray.filter(mj => !mj.jin && !mj.anGang && !mj.show && mj.code === currentOutMjCode).length >= 2) {
@@ -413,6 +429,10 @@
 
   function handleGang() {
     console.log(data)
+	  if (!data.currentOutMajiang) { 
+			// 防错代码
+      return false 
+    }
     const currentOutMjCode = data.currentOutMajiang.code
     const mjBottomArray = user.userMajiangList
     if (mjBottomArray.filter(mj => !mj.jin && !mj.anGang && !mj.show && mj.code === currentOutMjCode).length === 3) {

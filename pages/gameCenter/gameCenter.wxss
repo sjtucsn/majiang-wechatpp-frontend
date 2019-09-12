@@ -1,0 +1,38 @@
+/* pages/gameCenter/gameCenter.wxss */
+.top-user {
+  text-align: center;
+  position: relative;
+  height: 26px;
+}
+
+.left-user {
+  line-height: 75px;
+  vertical-align: top;
+  display: inline-block;
+  position: relative;
+  text-align: right;
+  width: 80px;
+  margin-right: 5px;
+}
+
+.right-user {
+  line-height: 75px;
+  vertical-align: top;
+  display: inline-block;
+  position: relative;
+  text-align: left;
+  width: 80px;
+  margin-left: 5px;
+}
+
+.bottom-user {
+  position: relative;
+  top: -5rpx;
+  text-align: center;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

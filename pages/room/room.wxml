@@ -112,12 +112,16 @@
   </view>
 
   <view class="bottom">
-    <view wx:for="{{mjBottomArray}}" wx:key="id" style="float: left; width: 34px; position: relative; top: {{item.top}}" bindtap="handleChoose" data-index="{{index}}">
-      <image wx:if="{{item.anGang}}" src="/assets/img/mj_04.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_02.png" mode="aspectFill" style="width: 36px; height: 66px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
-      <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 19px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
-      <image wx:if="{{item.show}}" src="/assets/img/mj_01.png" mode="aspectFill" style="width: 36px; height: 66px"></image>
-      <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 8px"></image>
+    <view style="position: relative; float: left; left: 50%; width: 593px">
+      <view wx:for="{{mjBottomArray}}" wx:key="id" style="float: left; width: {{item.anGang || item.show ? '27px' : '34px'}}; position: relative; top: {{item.top}}; left: -52%; padding-top: {{ item.anGang || item.show ? '15px' : 0 }}" bindtap="handleChoose" data-index="{{index}}">
+        <image wx:if="{{item.anGang}}" src="/assets/img/mj_04.png" mode="aspectFill" style="width: 27px; height: 50px"></image>
+
+        <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/mj_02.png" mode="aspectFill" style="width: 36px; height: 66px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
+        <image wx:if="{{!item.anGang && !item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 28px; height: 40px; position: absolute; left: 4px; top: 19px; margin-left: {{item.id === currentInMajiangId ? '15px' : 0}}"></image>
+
+        <image wx:if="{{item.show}}" src="/assets/img/mj_01.png" mode="aspectFill" style="width: 27px; height: 50px"></image>
+        <image wx:if="{{item.show}}" src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 21px; height: 30px; position: absolute; left: 3px; top: 21px"></image>
+      </view>
     </view>
   </view>
 

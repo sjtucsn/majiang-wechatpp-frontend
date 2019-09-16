@@ -51,7 +51,7 @@
 
 .bottom {
   position: absolute;
-  left: calc(50vw - 310px);
+  width: 100vw;
   bottom: 0;
 }
 

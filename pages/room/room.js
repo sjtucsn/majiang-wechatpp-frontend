@@ -49,6 +49,8 @@ Page({
     canQiangJin: false,
     // 当前轮到哪个用户出牌
     currentUserName: '',
+    // 当前出牌时可能会碰或胡的下家列表
+    nextUserNameList: [],
     // 按照出牌顺序下一个出牌的用户（如果没有碰杠胡时，就是当前用户，有碰杠胡时，记录按照顺序的下一个用户）
     physicalNextUserName: '',
     // 当前摸入的麻将id，用于在界面上和其它麻将分开（体现是刚摸入的）
@@ -875,6 +877,7 @@ Page({
 
       this.setData({
         messageType: game.messageType,
+        nextUserNameList: game.nextUserNameList,
         currentOutMajiang: currentOutMajiang ? currentOutMajiang : {},
         currentUserName: currentUserName ? currentUserName : '',
         physicalNextUserName: game.physicalNextUserName ? game.physicalNextUserName : 0,

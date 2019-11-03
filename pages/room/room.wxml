@@ -74,8 +74,8 @@
     </view>
   </view>
 
-  <image src="/assets/img/message.png" mode="aspectFill" bindtap="showDialog" style="z-index: 10; width: 29px; height: 25px; position: absolute; right: 1vw; bottom: 3vh; margin-right: 5px"></image>
-  <image src="/assets/img/{{isRecording ? 'recording' : 'record'}}.png" mode="aspectFill" bindtap="showAlert" bindlongpress="startRecording" bindtouchend="stopRecording" style="z-index: 10; width: 40px; height: 40px; position: absolute; right: 1vw; bottom: 13vh;"></image>
+  <!-- <image src="/assets/img/message.png" mode="aspectFill" bindtap="showDialog" style="z-index: 10; width: 29px; height: 25px; position: absolute; right: 1vw; bottom: 3vh; margin-right: 5px"></image> -->
+  <image src="/assets/img/{{isRecording ? 'recording' : 'record'}}.png" mode="aspectFill" bindtap="showAlert" bindlongpress="startRecording" bindtouchend="stopRecording" style="z-index: 10; width: 40px; height: 40px; position: absolute; right: 1vw; bottom: 18vh;"></image>
 
   <scroll-view wx:if="{{showDialog}}" scroll-y class="dialog">
     <image src="/assets/img/close.png" mode="aspectFill" bindtap="closeDialog" style="z-index: 1001; width: 15px; height: 15px; position: absolute; right: 3px; top: 3px"></image>

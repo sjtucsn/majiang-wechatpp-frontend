@@ -1,6 +1,7 @@
 <!--pages/room.wxml-->
 <view class="room">
   <button style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 4vw; top: 1vh" size="mini" bindtap="handleQuitGame">退出</button>
+  <button wx:if="{{userNum < 4}}" style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 14vw; top: 1vh" size="mini" bindtap="handleAddRobot">机器人</button>
 
   <text style="position: absolute; right: 2vw; font-size: 14px; color: white; line-height: 30px; z-index: 10">剩余麻将数：{{remainMajiangNum}}</text>
 
@@ -38,14 +39,14 @@
   <view style="display: flex; justify-content: center;">
     <view style="margin-top: 22vh; color: white; font-size: 16px;">
       <view wx:if="{{topUser}}" class="top-user {{currentUserName === topUser.userNickName ? 'name-select': ''}}">
-        <text id="top-user">{{topUser.userNickName}}{{topUser.userNickName ? '(' + topUser.score + ')' : ''}}{{topUser.banker ? '庄' : ''}}{{topUser.ready ? '(准备)' : ''}}</text>
+        <text id="top-user">{{topUser.userNickName}}{{topUser.userNickName ? '(' + topUser.score + ')' : ''}}{{topUser.banker ? '庄' : ''}}{{topUser.ready ? '(准备)' : ''}}{{topUser.robotPlay ? '(托管)' : ''}}</text>
         <view wx:if="{{dialogPosition[0].show}}" id="top-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[0].left}}; top: {{dialogPosition[0].top}}">
           <view class="user-message">{{dialogPosition[0].message}}</view>
         </view>
       </view>
 
       <view wx:if="{{leftUser}}" class="left-user {{currentUserName === leftUser.userNickName ? 'name-select': ''}}">
-        <text id="left-user">{{leftUser.userNickName}}{{leftUser.userNickName ? '(' + leftUser.score + ')' : ''}}{{leftUser.banker ? '庄' : ''}}{{leftUser.ready ? '(准备)' : ''}}</text>
+        <text id="left-user">{{leftUser.userNickName}}{{leftUser.userNickName ? '(' + leftUser.score + ')' : ''}}{{leftUser.banker ? '庄' : ''}}{{leftUser.ready ? '(准备)' : ''}}{{leftUser.robotPlay ? '(托管)' : ''}}</text>
         <view wx:if="{{dialogPosition[1].show}}" id="left-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[1].left}}; top: {{dialogPosition[1].top}}">
           <view class="user-message">{{dialogPosition[1].message}}</view>
         </view>
@@ -55,14 +56,14 @@
       <image src="/assets/img/{{jin.code}}.png" style="width: 28px; height: 40px; position: relative; left: -55px; top: -29px; background: white; border: solid 3px orange"></image>
 
       <view wx:if="{{rightUser}}" class="right-user {{currentUserName === rightUser.userNickName ? 'name-select': ''}}">
-        <text id="right-user">{{rightUser.userNickName}}{{rightUser.userNickName ? '(' + rightUser.score + ')' : ''}}{{rightUser.banker ? '庄' : ''}}{{rightUser.ready ? '(准备)' : ''}}</text>
+        <text id="right-user">{{rightUser.userNickName}}{{rightUser.userNickName ? '(' + rightUser.score + ')' : ''}}{{rightUser.banker ? '庄' : ''}}{{rightUser.ready ? '(准备)' : ''}}{{rightUser.robotPlay ? '(托管)' : ''}}</text>
         <view wx:if="{{dialogPosition[2].show}}" id="right-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[2].left}}; top: {{dialogPosition[2].top}}">
           <view class="user-message">{{dialogPosition[2].message}}</view>
         </view>
       </view>
 
       <view wx:if="{{bottomUser}}" class="bottom-user {{currentUserName === bottomUser.userNickName ? 'name-select': ''}}">
-        <text id="bottom-user">{{bottomUser.userNickName}}{{bottomUser.userNickName ? '(' + bottomUser.score + ')' : ''}}{{bottomUser.banker ? '庄' : ''}}{{bottomUser.ready ? '(准备)' : ''}}</text>
+        <text id="bottom-user">{{bottomUser.userNickName}}{{bottomUser.userNickName ? '(' + bottomUser.score + ')' : ''}}{{bottomUser.banker ? '庄' : ''}}{{bottomUser.ready ? '(准备)' : ''}}{{bottomUser.robotPlay ? '(托管)' : ''}}</text>
         <view wx:if="{{dialogPosition[3].show}}" id="bottom-user-message" style="position: fixed; z-index: 10000; left: {{dialogPosition[3].left}}; top: {{dialogPosition[3].top}}">
           <view class="user-message">{{dialogPosition[3].message}}</view>
         </view>

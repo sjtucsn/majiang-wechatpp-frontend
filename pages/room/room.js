@@ -66,6 +66,8 @@ Page({
       result: '',
       detail: []
     },
+    // 当前房间内用户数量
+    userNum: 0,
     // 四个方向的用户
     topUser: '',
     leftUser: '',
@@ -110,6 +112,14 @@ Page({
       })
     })
     this.setData({ showDialog: false })
+  },
+
+  handleAddRobot() {
+    wx.sendSocketMessage({
+      data: JSON.stringify({
+        type: constant.ADD_ROBOT
+      })
+    })
   },
 
   /**
@@ -556,13 +566,14 @@ Page({
   handleQuitGame: function () {
     wx.showModal({
       title: '提示',
-      content: '您确定要退出游戏吗',
+      content: (this.data.gameStarted ? '本局游戏尚未结束，' : '') + '您确定要退出游戏吗',
       success(res) {
         if (res.confirm) {
           wx.navigateBack()
         }
       }
     })
+
   },
 
   /**
@@ -660,13 +671,13 @@ Page({
             title: game.message,
             icon: 'none'
           })
-          if (game.remainMajiangList.length > 0 && game.jin) {
+          if (game.remainMajiangList.length > 0 && game.gameStarted) {
             // 说明进入时游戏已经开始，不需要再准备
-            this.setData({ connected: true, gameStarted: true, jin: game.jin })
+            this.setData({ connected: true })
           } else {
             if (game.message.includes(app.globalData.userInfo.nickName)) {
               // 说明进入时游戏还没开始，需要再次准备
-              this.setData({ connected: false, gameStarted: false })
+              this.setData({ connected: false })
             }
           }
           break;
@@ -686,7 +697,7 @@ Page({
           wx.showToast({
             title: '游戏开始！'
           })
-          this.setData({ gameStarted: true, jin: {}, canQiangJin: false })
+          this.setData({ canQiangJin: false })
           break;
         }
         case constant.RESET_FLOWER: {
@@ -876,6 +887,8 @@ Page({
       const mjLeftOutArray = [...leftUser.flowerList, ...leftUser.outList]
 
       this.setData({
+        gameStarted: game.gameStarted,
+        jin: game.jin,
         messageType: game.messageType,
         nextUserNameList: game.nextUserNameList,
         currentOutMajiang: currentOutMajiang ? currentOutMajiang : {},
@@ -883,6 +896,7 @@ Page({
         physicalNextUserName: game.physicalNextUserName ? game.physicalNextUserName : 0,
         currentInMajiangId: currentInMajiang && currentInMajiang.id ? currentInMajiang.id : -1,
         remainMajiangNum: game.remainMajiangList.length,
+        userNum: game.userList.filter(user => user.userNickName != '').length,
         topUser,
         leftUser,
         rightUser,

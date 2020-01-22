@@ -25,3 +25,4 @@ export const INFO = 19;
 export const GAME_OVER = 20;
 export const CHAT = 101;
 export const AUDIO_CHAT = 102;
+export const ADD_ROBOT = 103;

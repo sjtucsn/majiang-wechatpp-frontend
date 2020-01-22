@@ -26,6 +26,20 @@ Page({
   },
 
   /**
+   * 处理用户重新进入房间事件
+   */
+  handleResume() {
+    const nickName = app.globalData.userInfo.nickName;
+    if (this.data.tables[0].includes(nickName)) {
+      wx.sendSocketMessage({
+        data: JSON.stringify({
+          type: constant.CHOOSE_SEAT
+        })
+      })
+    }
+  },
+
+  /**
    * 退出游戏
    */
   handleQuitGame: function () {

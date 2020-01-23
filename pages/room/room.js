@@ -697,7 +697,7 @@ Page({
           wx.showToast({
             title: '游戏开始！'
           })
-          this.setData({ canQiangJin: false })
+          this.setData({ canQiangJin: false, jin: null })
           break;
         }
         case constant.RESET_FLOWER: {

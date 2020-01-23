@@ -90,7 +90,7 @@ Page({
       console.log(game)
       if (game.messageType === 19 && game.message === app.globalData.userInfo.nickName + '进入房间') {
         wx.navigateTo({
-          url: `../room/room`,
+          url: '../room/room',
         })
         return
       }
@@ -146,6 +146,7 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
+    wx.closeSocket()
     clearInterval(app.globalData.heartBeat)
   },
 

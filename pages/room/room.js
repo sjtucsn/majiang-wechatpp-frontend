@@ -359,6 +359,14 @@ Page({
       })
       return
     }
+    if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
+      // 防止可以胡的牌先点了吃，但是下家有要碰的或者要胡的
+      wx.showToast({
+        title: '你现在不能吃（不过能胡）',
+        icon: 'none'
+      })
+      return
+    }
     if (this.data.currentOutMajiang.jin) {
       wx.showToast({
         title: '根据规则，金不能吃',
@@ -417,6 +425,14 @@ Page({
       })
       return
     }
+    if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
+      // 防止可以胡的牌先点了碰，但是下家有要胡的
+      wx.showToast({
+        title: '你现在不能碰（不过能胡）',
+        icon: 'none'
+      })
+      return
+    }
     if (this.data.currentOutMajiang.jin) {
       wx.showToast({
         title: '根据规则，金不能碰',
@@ -448,6 +464,14 @@ Page({
     if (this.data.currentUserName !== this.data.bottomUser.userNickName) {
       wx.showToast({
         title: '没轮到你，不能杠哦',
+        icon: 'none'
+      })
+      return
+    }
+    if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
+      // 防止可以胡的牌先点了杠，但是下家有要胡的
+      wx.showToast({
+        title: '你现在不能杠（不过能胡）',
         icon: 'none'
       })
       return
@@ -697,7 +721,7 @@ Page({
           wx.showToast({
             title: '游戏开始！'
           })
-          this.setData({ canQiangJin: false, jin: null })
+          this.setData({ canQiangJin: false })
           break;
         }
         case constant.RESET_FLOWER: {
@@ -888,7 +912,7 @@ Page({
 
       this.setData({
         gameStarted: game.gameStarted,
-        jin: game.jin,
+        jin: game.jin ? game.jin : null,
         messageType: game.messageType,
         nextUserNameList: game.nextUserNameList,
         currentOutMajiang: currentOutMajiang ? currentOutMajiang : {},

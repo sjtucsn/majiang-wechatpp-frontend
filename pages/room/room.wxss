@@ -129,5 +129,5 @@
 .center-bottom {
   position: absolute;
   left: 18vw;
-  bottom: 18vh;
+  bottom: 11vw;
 }

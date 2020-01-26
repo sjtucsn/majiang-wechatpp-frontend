@@ -28,7 +28,6 @@
 .name-select {
   color: #FD8408 !important;
   font-weight: bold;
-  font-size: 20px !important;
 }
 
 .button {

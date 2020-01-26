@@ -2,13 +2,13 @@
 <view style="display: flex; justify-content: center; width: 100vw; height: 100vh">
   <button style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 4vw; top: 1vh" size="mini" bindtap="handleQuitGame">退出</button>
   <image src="/assets/img/game_center.png" mode="aspectFill" style="position: fixed; width: 103%; height: 100%; z-index: -10"></image>
-  <view wx:for="{{tables}}" wx:key="*this" style="margin-top: 30vh; color: white; font-size: 16px; display: inline-block" bindtap="handleResume">
+  <view wx:for="{{tables}}" wx:key="{{index}}" style="margin-top: 30vh; color: white; font-size: 16px; display: inline-block" data-no="{{index}}" bindtap="handleResume">
     <view class="top-user">
       <view wx:if="{{item[2]}}" class="text-ellipsis">
         {{item[2]}}
       </view>
       <view wx:else>
-        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: -17px" mode="aspectFill" data-index="2" bindtap="handleUserIn"></image>
+        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: -17px" mode="aspectFill" data-index="2" data-no="{{index}}" bindtap="handleUserIn"></image>
       </view>
     </view>
 
@@ -17,7 +17,7 @@
         {{item[3]}}
       </view>
       <view wx:else>
-       <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 15px" mode="aspectFill" data-index="3" bindtap="handleUserIn"></image>
+       <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 15px" mode="aspectFill" data-index="3" data-no="{{index}}"  bindtap="handleUserIn"></image>
       </view>
     </view>
 
@@ -28,7 +28,7 @@
         {{item[1]}}
       </view>
       <view wx:else>
-        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 15px" mode="aspectFill" data-index="1" bindtap="handleUserIn"></image>
+        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 15px" mode="aspectFill" data-index="1" data-no="{{index}}"  bindtap="handleUserIn"></image>
       </view>
     </view>
 
@@ -37,7 +37,7 @@
         {{item[0]}}
       </view>
       <view wx:else>
-        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 2px"  mode="aspectFill" data-index="0" bindtap="handleUserIn"></image>
+        <image src="/assets/img/chair.png" style="width: 40px; height: 40px; position: relative; top: 2px"  mode="aspectFill" data-index="0" data-no="{{index}}" bindtap="handleUserIn"></image>
       </view>
     </view>
   </view>

@@ -9,6 +9,8 @@ Page({
    */
   data: {
     tables: [
+      ['', '', '', ''],
+      ['', '', '', ''],
       ['', '', '', '']
     ]
   },
@@ -20,7 +22,7 @@ Page({
     wx.sendSocketMessage({
       data: JSON.stringify({
         type: constant.CHOOSE_SEAT,
-        message: e.currentTarget.dataset.index
+        message: parseInt(e.currentTarget.dataset.index) + 4 * e.currentTarget.dataset.no
       })
     })
   },
@@ -28,12 +30,13 @@ Page({
   /**
    * 处理用户重新进入房间事件
    */
-  handleResume() {
+  handleResume(e) {
     const nickName = app.globalData.userInfo.nickName;
-    if (this.data.tables[0].includes(nickName)) {
+    if (this.data.tables[e.currentTarget.dataset.no].includes(nickName)) {
       wx.sendSocketMessage({
         data: JSON.stringify({
-          type: constant.CHOOSE_SEAT
+          type: constant.CHOOSE_SEAT,
+          message: 4 * e.currentTarget.dataset.no
         })
       })
     }
@@ -94,10 +97,11 @@ Page({
         })
         return
       }
-      const data = game.userList.map(user => user.userNickName)
-      this.setData({
-        tables: [data]
-      })
+      if (game[0] != null) {
+        this.setData({
+          tables: game
+        })
+      }
     })
 
     wx.onSocketError(res => {

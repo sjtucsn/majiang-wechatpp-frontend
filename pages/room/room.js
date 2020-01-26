@@ -375,7 +375,7 @@ Page({
       return
     }
     const currentOutMjCode = this.data.currentOutMajiang.code
-    const mjBottomArray = this.data.mjBottomArray
+    const mjBottomArray = this.data.mjBottomArray.map(mj => {return {...mj, top: 0}})
     const canEatMjCodeArray = mjBottomArray.filter(mj => !mj.show && !mj.anGang && !mj.jin).map(mj => mj.code).filter(code => code - currentOutMjCode <= 2 || code - currentOutMjCode >= -2)
     const canChiArray = []
     let mjId1, mjId2
@@ -396,15 +396,14 @@ Page({
       canChiArray.push(currentOutMjCode + 1, currentOutMjCode + 2)
     }
     if (mjId1 && mjId2) {
-      console.log(mjId1)
-      console.log(mjId2)
       wx.showToast({
         title: '请选择吃的牌',
         icon: 'success'
       })
       this.setData({
         isChi: true,
-        canChiArray
+        canChiArray,
+        mjBottomArray: mjBottomArray
       })
     } else {
       wx.showToast({

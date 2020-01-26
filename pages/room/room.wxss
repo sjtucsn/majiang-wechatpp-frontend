@@ -26,7 +26,14 @@
 }
 
 .name-select {
-  color: red;
+  color: #FD8408 !important;
+  font-weight: bold;
+  font-size: 20px !important;
+}
+
+.button {
+  width: 6vw; 
+  height: 6vw;
 }
 
 .top {
@@ -59,6 +66,8 @@
   text-align: center;
   position: relative;
   height: 26px;
+  color: #EEEEEE;
+  font-size: 18px;
 }
 
 .left-user {
@@ -71,6 +80,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #EEEEEE;
+  font-size: 18px;
 }
 
 .right-user {
@@ -83,12 +94,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #EEEEEE;
+  font-size: 18px;
 }
 
 .bottom-user {
   position: relative;
   top: -5rpx;
   text-align: center;
+  color: #EEEEEE;
+  font-size: 18px;
 }
 
 .user-message {

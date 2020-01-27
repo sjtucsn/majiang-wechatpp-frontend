@@ -1,7 +1,7 @@
 <!--pages/room.wxml-->
 <view class="room">
   <image src="/assets/img/return.png" style="position: absolute; width: 84px; height: 28px; left: 2vw; top: 1vh" bindtap="handleQuitGame"></image>
-  <button wx:if="{{userNum < 4}}" style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 14vw; top: 1vh" size="mini" bindtap="handleAddRobot">机器人</button>
+  <button wx:if="{{userNum < 4 && (bottomUser.userNickName === '真遇' || bottomUser.userNickName === '你好，朝阳')}}" style="position: absolute; padding: 2px 5px; font-size: 25px; line-height: 25px; left: 14vw; top: 1vh" size="mini" bindtap="handleAddRobot">机器人</button>
 
   <text style="position: absolute; right: 2vw; font-size: 14px; color: white; line-height: 30px; z-index: 10">剩余麻将数：{{remainMajiangNum}}</text>
 

@@ -11,7 +11,7 @@
   display: inline-block;
   position: relative;
   text-align: right;
-  width: 80px;
+  width: 65px;
   margin-right: 5px;
 }
 
@@ -21,7 +21,7 @@
   display: inline-block;
   position: relative;
   text-align: left;
-  width: 80px;
+  width: 65px;
   margin-left: 5px;
 }
 

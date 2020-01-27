@@ -614,6 +614,10 @@ Page({
       // 游戏对象
       const game = JSON.parse(res.data)
       console.log(game)
+      // 数组不响应
+      if (game[0] != null) {
+        return;
+      }
 
       const innerAudioContext = wx.createInnerAudioContext()
 

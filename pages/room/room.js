@@ -68,6 +68,8 @@ Page({
     },
     // 当前房间内用户数量
     userNum: 0,
+    // 当前串数
+    bankerNo: 0,
     // 四个方向的用户
     topUser: '',
     leftUser: '',
@@ -917,6 +919,7 @@ Page({
         gameStarted: game.gameStarted,
         jin: game.jin ? game.jin : null,
         messageType: game.messageType,
+        bankerNo: game.bankerNo,
         nextUserNameList: game.nextUserNameList,
         currentOutMajiang: currentOutMajiang ? currentOutMajiang : {},
         currentUserName: currentUserName ? currentUserName : '',

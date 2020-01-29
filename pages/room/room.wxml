@@ -128,7 +128,7 @@
   </view>
 
   <view class="center-top">
-    <view wx:for="{{mjTopOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative;">
+    <view wx:for="{{mjTopOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative; transform: {{item.isCurrent ? 'scale(1.3)' : 'scale(1)'}}; transform-origin: 100% 10%">
       <image src="/assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
       <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px; transform: rotate(180deg);"></image>
       <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 3px; top: -3px;"></image>
@@ -136,7 +136,7 @@
   </view>
 
   <view class="center-left">
-    <view wx:for="{{mjLeftOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative;">
+    <view wx:for="{{mjLeftOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative; transform: {{item.isCurrent ? 'scale(1.3)' : 'scale(1)'}}; transform-origin: 0 0">
       <image src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
       <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(90deg);"></image>
       <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 6px; top: -10px;"></image>
@@ -144,7 +144,7 @@
   </view>
 
   <view class="center-right">
-    <view wx:for="{{mjRightOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative;">
+    <view wx:for="{{mjRightOutArray}}" wx:key="id" style="width: 30px; height: 17px; position: relative; transform: {{item.isCurrent ? 'scale(1.3)' : 'scale(1)'}}; transform-origin: 100% 100%">
       <image src="/assets/img/mj_16.png" mode="aspectFill" style="width: 30px; height: 20px"></image>
       <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 8px; top: -3px; transform: rotate(270deg);"></image>
       <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 6px; top: -10px;"></image>
@@ -152,7 +152,7 @@
   </view>
 
   <view class="center-bottom">
-    <view wx:for="{{mjBottomOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative;">
+    <view wx:for="{{mjBottomOutArray}}" wx:key="id" style="float: left; width: 20px; position: relative; transform: {{item.isCurrent ? 'scale(1.3)' : 'scale(1)'}}; transform-origin: 10% 80%">
       <image src="/assets/img/mj_01.png" mode="aspectFill" style="width: 24px; height: 36px"></image>
       <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 14px; height: 22px; position: absolute; left: 5px; top: 5px"></image>
       <image wx:if="{{item.isCurrent}}" src="/assets/img/diamond.png" style="width: 18px; height: 18px; position: absolute; left: 3px; top: -3px;"></image>

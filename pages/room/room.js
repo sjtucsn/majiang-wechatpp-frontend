@@ -363,9 +363,11 @@ Page({
     }
     if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
       // 防止可以胡的牌先点了吃，但是下家有要碰的或者要胡的
-      wx.showToast({
-        title: '你现在不能吃（不过能胡）',
-        icon: 'none'
+      wx.sendSocketMessage({
+        data: JSON.stringify({
+          type: constant.PASS,
+          message: '过'
+        })
       })
       return
     }
@@ -428,9 +430,11 @@ Page({
     }
     if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
       // 防止可以胡的牌先点了碰，但是下家有要胡的
-      wx.showToast({
-        title: '你现在不能碰（不过能胡）',
-        icon: 'none'
+      wx.sendSocketMessage({
+        data: JSON.stringify({
+          type: constant.PASS,
+          message: '过'
+        })
       })
       return
     }
@@ -471,9 +475,11 @@ Page({
     }
     if (this.data.nextUserNameList.length > 0 && this.data.nextUserNameList[0] != this.data.bottomUser.userNickName) {
       // 防止可以胡的牌先点了杠，但是下家有要胡的
-      wx.showToast({
-        title: '你现在不能杠（不过能胡）',
-        icon: 'none'
+      wx.sendSocketMessage({
+        data: JSON.stringify({
+          type: constant.PASS,
+          message: '过'
+        })
       })
       return
     }
@@ -881,7 +887,8 @@ Page({
               userNickName: user.userNickName,
               score: user.score,
               scoreChange: user.scoreChange,
-              previousScore: user.score - user.scoreChange
+              previousScore: user.score - user.scoreChange,
+              majiangList: user.userMajiangList
             }
           })
           this.setData({ connected: false, gameStarted: false, showScoreboard: true, scoreboard })

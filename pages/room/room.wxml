@@ -18,23 +18,21 @@
   </view>
   <image class='background' src="/assets/img/background.png" mode="aspectFill"></image>
 
-  <view wx:if="{{showScoreboard}}" style="position: absolute; z-index: 100; width: 62vw; left: 19vw; top: 12vh; background: white; border-radius: 10px; font-size: 16px; padding: 10px 1vw">
-    <view style="text-align: center; font-size: 24px; line-height: 30px">{{scoreboard.result}}</view>
-    <view style="text-align: center; padding: 3px 0">
-      <text style="width: 20vw; display: inline-block">用户昵称</text>
-      <text style="width: 15vw; display: inline-block">上局分数</text>
-      <text style="width: 15vw; display: inline-block">本局得分</text>
-      <text style="width: 10vw; display: inline-block">总分</text>
+  <image wx:if="{{showScoreboard}}" src="/assets/img/scoreBoard.png" style="position: absolute; z-index: 99; width: 86vw; height: 80vh; left: 7vw; top: 8vh; font-size: 16px"></image>
+  <view wx:if="{{showScoreboard}}" style="position: absolute; z-index: 100; width: 86vw; left: 7vw; top: 10vh; font-size: 16px">
+    <view style="text-align: center; font-size: 24px; line-height: 10vh; margin-top: 3vh">{{scoreboard.result}}</view>
+    <view wx:for="{{scoreboard.detail}}" wx:key="{{userNickName}}" style="height: 14vh;">
+      <text style="width: 12vw; line-height: 14vh; float: left; margin-left: 4vw; margin-right: 1vw; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{{item.userNickName}}</text>
+      <view style="float: left; position: relative; top: 0.8vw">
+        <view wx:for="{{item.majiangList}}" wx:key="id" style="float: left; width: 2.8vw; position: relative">
+          <image src="/assets/img/mj_01.png" mode="aspectFill" style="width: 3.4vw; height: 5.1vw"></image>
+          <image src="/assets/img/{{item.code}}.png" mode="aspectFill" style="width: 2.0vw; height: 3.0vw; position: absolute; left: 0.7vw; top: 0.7vw;"></image>
+        </view>
+      </view>
+      <text style="width: 5vw; line-height: 14vh; float: right; margin-right: 4vw; text-align: right;">{{item.score}}</text>
+      <text style="width: 5vw; line-height: 14vh; float: right; text-align: right">{{item.scoreChange}}</text>
     </view>
-    <view wx:for="{{scoreboard.detail}}" wx:key="{{userNickName}}" style="padding: 0; text-align: center">
-      <text style="width: 20vw; display: inline-block; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{{item.userNickName}}</text>
-      <text style="width: 15vw; display: inline-block">{{item.previousScore}}</text>
-      <text style="width: 15vw; display: inline-block">{{item.scoreChange}}</text>
-      <text style="width: 10vw; display: inline-block">{{item.score}}</text>
-    </view>
-    <view style="padding: 5px 0">
-      <button style="width: 10vw; padding: 2px 5px; font-size: 25px; line-height: 25px;" bindtap="hideScoreBoard">确定</button>
-    </view>
+    <image src="/assets/img/close.png" style="position: absolute; height: 4vw; width: 4vw; top: -0.5vh; right: 1.5vw" bindtap="hideScoreBoard"></image>
   </view>
 
   <view style="display: flex; justify-content: center;">

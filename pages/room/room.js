@@ -952,8 +952,8 @@ Page({
       if (currentUserName === app.globalData.userInfo.nickName) {
         // 如果有麻将摸进，说明已经摸牌
         if (currentInMajiang && currentInMajiang.id) {
-          if (currentInMajiang.code > 30 && game.remainMajiangList.length > 16) {
-            // 摸到的是花且剩余牌数大于16张（尚未和局时）补花
+          if (currentInMajiang.code > 30 && game.remainMajiangList.length >= 16) {
+            // 摸到的是花且剩余牌数大于等于16张（尚未和局时）补花
             setTimeout(() => {
               wx.sendSocketMessage({
                 data: JSON.stringify({
